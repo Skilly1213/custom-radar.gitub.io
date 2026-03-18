@@ -443,6 +443,172 @@
     50% { opacity: 0.4; }
   }
 
+
+  /* ── BOT BUTTON ── */
+  #btn-bot {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--dim);
+    cursor: pointer;
+    padding: 4px 5px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    line-height: 0;
+  }
+  #btn-bot:hover { border-color: #00ff88; color: #00ff88; background: rgba(0,255,136,0.08); }
+  #btn-bot.active {
+    border-color: #00ff88; color: #00ff88;
+    background: rgba(0,255,136,0.12);
+    box-shadow: 0 0 10px rgba(0,255,136,0.4);
+    animation: bot-btn-pulse 2s ease-in-out infinite;
+  }
+  @keyframes bot-btn-pulse {
+    0%,100% { box-shadow: 0 0 10px rgba(0,255,136,0.4); }
+    50%      { box-shadow: 0 0 18px rgba(0,255,136,0.7); }
+  }
+
+  /* ── BOT TERMINAL ── */
+  #bot-terminal {
+    position: absolute;
+    inset: 0;
+    background: #020508;
+    z-index: 700;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Share Tech Mono', monospace;
+    border-top: 2px solid #00ff88;
+    animation: terminal-open 0.2s ease;
+  }
+  #bot-terminal.hidden { display: none; }
+  @keyframes terminal-open {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  #terminal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: #03080e;
+    border-bottom: 1px solid #0a1a0a;
+    flex-shrink: 0;
+  }
+  #terminal-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #00ff88;
+  }
+  #bot-status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #333;
+    transition: background 0.3s;
+    flex-shrink: 0;
+  }
+  #bot-status-dot.online { background: #00ff88; box-shadow: 0 0 8px #00ff88; animation: dot-blink 1.5s infinite; }
+  #bot-status-dot.thinking { background: #ffd700; box-shadow: 0 0 8px #ffd700; animation: dot-blink 0.6s infinite; }
+  #bot-status-dot.speaking { background: #00d4ff; box-shadow: 0 0 8px #00d4ff; animation: dot-blink 0.4s infinite; }
+  @keyframes dot-blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  #terminal-header-btns { display: flex; gap: 5px; }
+  #terminal-header-btns button {
+    background: transparent;
+    border: 1px solid #0a1a0a;
+    color: #336633;
+    cursor: pointer;
+    width: 22px; height: 22px;
+    border-radius: 2px;
+    font-size: 11px;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #terminal-header-btns button:hover { border-color: #00ff88; color: #00ff88; }
+  #btn-tts-toggle.muted { color: #444; border-color: #222; }
+  #terminal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 10px;
+    font-size: 10.5px;
+    line-height: 1.6;
+    color: #33ff33;
+  }
+  #terminal-body::-webkit-scrollbar { width: 3px; }
+  #terminal-body::-webkit-scrollbar-thumb { background: #0a2a0a; }
+  .t-line { display: block; margin-bottom: 1px; white-space: pre-wrap; word-break: break-word; }
+  .t-sys    { color: #336633; }
+  .t-info   { color: #33ff33; }
+  .t-brain  { color: #00d4ff; }
+  .t-alert  { color: #ffd700; }
+  .t-warn   { color: #ff6b35; }
+  .t-speak  { color: #cc99ff; }
+  .t-dim    { color: #1a4a1a; }
+  .t-err    { color: #ff3333; }
+
+  /* ── BOT HUD (bottom of terminal) ── */
+  #bot-hud {
+    border-top: 1px solid #0a2a0a;
+    padding: 8px 10px 6px;
+    flex-shrink: 0;
+    background: #020a02;
+  }
+  #bot-alert-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 1px 7px;
+    border-radius: 2px;
+    border: 1px solid currentColor;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  #bot-alert-name {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 2px;
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 1px;
+  }
+  #bot-alert-area {
+    font-size: 10px;
+    color: #336633;
+    margin-bottom: 6px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+  #bot-thinking-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #bot-thinking-label {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: #336633;
+    width: 56px;
+    flex-shrink: 0;
+  }
+  #bot-thinking-track {
+    flex: 1;
+    height: 2px;
+    background: #0a1a0a;
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  #bot-thinking-fill {
+    height: 100%;
+    background: #00ff88;
+    border-radius: 1px;
+    width: 0%;
+    transition: width 0.1s linear;
+    box-shadow: 0 0 4px #00ff88;
+  }
+
   @media (max-width: 700px) {
     #sidebar { width: 100%; position: absolute; top: 0; left: 0; height: 55vh; z-index: 2000; }
     #map-container { position: absolute; top: 55vh; left: 0; right: 0; bottom: 0; }
@@ -514,6 +680,9 @@
         <div class="section-label" style="margin:0">Active Alerts</div>
         <div style="display:flex;align-items:center;gap:8px">
           <span id="alert-count-badge" class="calm">0</span>
+          <button id="btn-bot" title="Bot Mode">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M12 2a3 3 0 0 1 3 3v6H9V5a3 3 0 0 1 3-3z"/><circle cx="9" cy="16" r="1" fill="currentColor"/><circle cx="15" cy="16" r="1" fill="currentColor"/><path d="M8 11V7"/><path d="M16 11V7"/></svg>
+          </button>
           <button id="btn-tour" title="Alert Tour">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           </button>
@@ -619,6 +788,32 @@
           <span class="tour-speed-label">Dwell</span>
           <input type="range" id="tour-speed-slider" min="2" max="15" value="5" step="1">
           <span id="tour-speed-val">5s</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOT TERMINAL -->
+    <div id="bot-terminal" class="hidden">
+      <div id="terminal-header">
+        <div id="terminal-title">
+          <span id="bot-status-dot"></span>
+          <span id="bot-mode-label">BOT OFFLINE</span>
+        </div>
+        <div id="terminal-header-btns">
+          <button id="btn-tts-toggle" title="Toggle TTS">🔊</button>
+          <button id="btn-bot-close" title="Close Terminal">✕</button>
+        </div>
+      </div>
+      <div id="terminal-body">
+        <div id="terminal-lines"></div>
+      </div>
+      <div id="bot-hud">
+        <div id="bot-alert-badge"></div>
+        <div id="bot-alert-name"></div>
+        <div id="bot-alert-area"></div>
+        <div id="bot-thinking-bar">
+          <span id="bot-thinking-label">IDLE</span>
+          <div id="bot-thinking-track"><div id="bot-thinking-fill"></div></div>
         </div>
       </div>
     </div>
@@ -2195,6 +2390,380 @@ function buildColorGuideModal() {
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
   document.body.appendChild(modal);
 }
+
+
+// =============================================
+//  BOT MODE
+// =============================================
+const BOT = {
+  active:     false,
+  ttsEnabled: true,
+  currentUtterance: null,
+  scanTimer:  null,
+  dwellTimer: null,
+  thinkTimer: null,
+  highlightLayer: null,
+  lastAlertId: null,
+  idleCountdown: 0,
+  cycleCount: 0,
+
+  // How often bot wakes (ms between checks)
+  SCAN_INTERVAL_MIN: 18000,
+  SCAN_INTERVAL_MAX: 45000,
+
+  // Probability bot speaks about a given alert (0-1)
+  SPEAK_PROBABILITY: 0.72,
+
+  // Severity priority weights — higher = more likely chosen
+  WEIGHTS: {
+    'Tornado Warning': 100, 'Tornado Emergency': 100,
+    'Severe Thunderstorm Warning': 80, 'Destructive Severe Thunderstorm Warning': 85,
+    'Flash Flood Emergency': 90, 'Flash Flood Warning': 70,
+    'Blizzard Warning': 65, 'Hurricane Warning': 90, 'Typhoon Warning': 85,
+    'Red Flag Warning': 60, 'Winter Storm Warning': 55, 'High Wind Warning': 50,
+    'Flood Warning': 50, 'Ice Storm Warning': 60, 'Extreme Wind Warning': 65,
+    'Storm Surge Warning': 75, 'Gale Warning': 45, 'Snow Squall Warning': 55,
+    'Excessive Heat Warning': 55, 'Freeze Warning': 40, 'Dense Fog Advisory': 25,
+    'Special Weather Statement': 30, 'Coastal Flood Warning': 45,
+    'Rip Current Statement': 20, 'Winter Weather Advisory': 30,
+    '__warning': 50, '__watch': 30, '__advisory': 15, '__statement': 10, '__other': 5
+  },
+};
+
+// ── Terminal logging ──────────────────────────────────────────────────────
+function tlog(msg, cls = 't-info') {
+  const body = document.getElementById('terminal-lines');
+  if (!body) return;
+  const ts = new Date().toLocaleTimeString('en-US', {hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const line = document.createElement('span');
+  line.className = `t-line ${cls}`;
+  line.textContent = `[${ts}] ${msg}`;
+  body.appendChild(line);
+  // Auto-scroll to bottom
+  body.parentElement.scrollTop = body.parentElement.scrollHeight;
+  // Trim old lines (keep 300)
+  while (body.children.length > 300) body.removeChild(body.firstChild);
+}
+
+function tlogDivider() {
+  const body = document.getElementById('terminal-lines');
+  if (!body) return;
+  const line = document.createElement('span');
+  line.className = 't-line t-dim';
+  line.textContent = '─'.repeat(42);
+  body.appendChild(line);
+  body.parentElement.scrollTop = body.parentElement.scrollHeight;
+}
+
+// ── Bot brain: pick an alert intelligently ────────────────────────────────
+function botPickAlert() {
+  const alerts = (alertsData.all || []).filter(a => isAlertVisible(a) && a._resolvedGeom);
+  if (!alerts.length) return null;
+
+  tlog('BRAIN: Scanning ' + alerts.length + ' active alerts...', 't-brain');
+
+  // Score each alert
+  const scored = alerts.map(a => {
+    const sig = a.properties?.vtec?.significance || '';
+    const sev = getSeverity(sig, a.event);
+    let score = BOT.WEIGHTS[a.event] || BOT.WEIGHTS['__' + sev] || 5;
+
+    // Recency boost: newer alerts score higher
+    const sentAge = a.sent ? (Date.now() - new Date(a.sent).getTime()) / 60000 : 999;
+    if (sentAge < 10) score += 30;
+    else if (sentAge < 30) score += 15;
+    else if (sentAge < 60) score += 5;
+
+    // Avoid immediately repeating last alert
+    if (a.id === BOT.lastAlertId) score *= 0.1;
+
+    // Add jitter so it's not deterministic
+    score *= (0.7 + Math.random() * 0.6);
+
+    tlog(`BRAIN: [${score.toFixed(1)}] ${a.event} — ${(a.areaDesc||'').substring(0,35)}`, 't-brain');
+    return { alert: a, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  const chosen = scored[0]?.alert || null;
+
+  if (chosen) {
+    tlog(`BRAIN: Selected → ${chosen.event}`, 't-brain');
+  } else {
+    tlog('BRAIN: No suitable alert found.', 't-brain');
+  }
+  return chosen;
+}
+
+// ── TTS ───────────────────────────────────────────────────────────────────
+function botSpeak(text, onEnd) {
+  if (!BOT.ttsEnabled || !window.speechSynthesis) { onEnd && onEnd(); return; }
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.rate  = 0.92;
+  utt.pitch = 0.85;
+  utt.volume = 1.0;
+
+  // Try to pick a deep/authoritative voice
+  const voices = window.speechSynthesis.getVoices();
+  const preferred = voices.find(v =>
+    /david|mark|alex|google us|microsoft david|zira/i.test(v.name)
+  ) || voices.find(v => v.lang === 'en-US') || voices[0];
+  if (preferred) utt.voice = preferred;
+
+  utt.onstart = () => {
+    setBotStatus('speaking');
+    tlog('SPEAK: ' + text.substring(0, 80) + (text.length > 80 ? '...' : ''), 't-speak');
+  };
+  utt.onend = () => { onEnd && onEnd(); };
+  utt.onerror = () => { onEnd && onEnd(); };
+  BOT.currentUtterance = utt;
+  window.speechSynthesis.speak(utt);
+}
+
+// ── Build spoken script for an alert ─────────────────────────────────────
+function buildBotScript(alert) {
+  const info = alert.alertinfo || {};
+  const evt  = alert.event || 'Alert';
+  const area = (alert.areaDesc || '').split(';')[0].trim();
+  const sig  = alert.properties?.vtec?.significance || '';
+  const sev  = getSeverity(sig, evt);
+
+  const intros = [
+    `Attention. The National Weather Service has issued a ${evt}.`,
+    `This is an automated weather alert. A ${evt} is in effect.`,
+    `Weather alert. ${evt} issued by the National Weather Service.`,
+    `Priority weather notification. ${evt} now in effect.`,
+  ];
+  const intro = intros[Math.floor(Math.random() * intros.length)];
+
+  let script = intro + ' ';
+  if (area) script += `Affected area: ${area}. `;
+  if (info.WHAT) script += `${info.WHAT} `;
+  if (info.WHEN) script += `This is in effect ${info.WHEN} `;
+  if (info.IMPACTS) script += `Impacts: ${info.IMPACTS} `;
+
+  const outros = [
+    'Please take appropriate precautions.',
+    'Stay weather aware and follow guidance from local authorities.',
+    'Monitor official NWS channels for updates.',
+    'Take action now to protect life and property.',
+  ];
+  script += outros[Math.floor(Math.random() * outros.length)];
+
+  return script;
+}
+
+// ── Map zoom ──────────────────────────────────────────────────────────────
+function botZoomToAlert(alert) {
+  clearBotHighlight();
+  const geom  = alert._resolvedGeom;
+  const color = alertColor(alert);
+  if (!geom) return;
+  try {
+    const layer = L.geoJSON({ type:'Feature', geometry:geom }, {
+      style: { color, weight:3, fillColor:color, fillOpacity:0.22, opacity:1 }
+    }).addTo(map);
+    BOT.highlightLayer = layer;
+    map.fitBounds(layer.getBounds(), { padding:[60,60], maxZoom:10 });
+  } catch(e) {}
+}
+
+function botReturnHome() {
+  clearBotHighlight();
+  map.flyTo([39.5, -98.35], 5, { duration: 2.5, easing: t => t < 0.5 ? 2*t*t : -1+(4-2*t)*t });
+  tlog('MAP: Returning to national overview.', 't-sys');
+}
+
+function clearBotHighlight() {
+  if (BOT.highlightLayer) { map.removeLayer(BOT.highlightLayer); BOT.highlightLayer = null; }
+}
+
+// ── Status helpers ────────────────────────────────────────────────────────
+function setBotStatus(s) {
+  const dot   = document.getElementById('bot-status-dot');
+  const label = document.getElementById('bot-mode-label');
+  dot.className = 'online';
+  if (s === 'thinking') { dot.className = 'thinking'; label.textContent = 'BOT: THINKING'; }
+  else if (s === 'speaking') { dot.className = 'speaking'; label.textContent = 'BOT: SPEAKING'; }
+  else if (s === 'scanning') { dot.className = 'online'; label.textContent = 'BOT: SCANNING'; }
+  else if (s === 'idle')    { dot.className = 'online'; label.textContent = 'BOT: IDLE'; }
+  else if (s === 'zooming') { dot.className = 'online'; label.textContent = 'BOT: ON MAP'; }
+  else { dot.className = ''; label.textContent = 'BOT OFFLINE'; }
+}
+
+function updateBotHUD(alert) {
+  if (!alert) {
+    document.getElementById('bot-alert-badge').textContent = '';
+    document.getElementById('bot-alert-name').textContent  = '';
+    document.getElementById('bot-alert-area').textContent  = '';
+    return;
+  }
+  const sig   = alert.properties?.vtec?.significance || '';
+  const color = alertColor(alert);
+  const badge = document.getElementById('bot-alert-badge');
+  badge.textContent   = (alert.event || 'Alert').toUpperCase();
+  badge.style.color   = color;
+  badge.style.borderColor = color;
+  document.getElementById('bot-alert-name').textContent = alert.event || '';
+  document.getElementById('bot-alert-name').style.color = color;
+  document.getElementById('bot-alert-area').textContent = (alert.areaDesc || '').substring(0,60);
+}
+
+// Animated thinking bar
+let thinkFill = 0;
+function animateThinkBar(label, durationMs, onDone) {
+  clearInterval(BOT.thinkTimer);
+  thinkFill = 0;
+  const fill  = document.getElementById('bot-thinking-fill');
+  const lbl   = document.getElementById('bot-thinking-label');
+  lbl.textContent = label;
+  fill.style.width = '0%';
+  const step = 100 / (durationMs / 80);
+  BOT.thinkTimer = setInterval(() => {
+    thinkFill = Math.min(100, thinkFill + step);
+    fill.style.width = thinkFill + '%';
+    if (thinkFill >= 100) {
+      clearInterval(BOT.thinkTimer);
+      if (onDone) onDone();
+    }
+  }, 80);
+}
+
+// ── Main bot cycle ────────────────────────────────────────────────────────
+function botCycle() {
+  if (!BOT.active) return;
+  BOT.cycleCount++;
+
+  tlogDivider();
+  tlog(`SYS: Cycle #${BOT.cycleCount} — bot awake.`, 't-sys');
+  setBotStatus('scanning');
+  animateThinkBar('SCANNING', 1200, () => {
+    setBotStatus('thinking');
+    animateThinkBar('THINKING', 1800, () => {
+
+      // Should bot speak this cycle?
+      const roll = Math.random();
+      tlog(`BRAIN: Activity roll ${roll.toFixed(3)} vs threshold ${BOT.SPEAK_PROBABILITY}`, 't-brain');
+
+      if (roll > BOT.SPEAK_PROBABILITY) {
+        tlog('BRAIN: Bot decided to stay silent this cycle.', 't-brain');
+        setBotStatus('idle');
+        animateThinkBar('IDLE', 500);
+        scheduleBotCycle();
+        return;
+      }
+
+      const alert = botPickAlert();
+      if (!alert) {
+        tlog('SYS: No alerts with geometry. Staying idle.', 't-sys');
+        setBotStatus('idle');
+        animateThinkBar('IDLE', 500);
+        scheduleBotCycle();
+        return;
+      }
+
+      BOT.lastAlertId = alert.id;
+      updateBotHUD(alert);
+
+      // Log alert details to terminal
+      tlogDivider();
+      tlog(`ALERT: ${alert.event}`, 't-alert');
+      tlog(`AREA:  ${alert.areaDesc || '—'}`, 't-alert');
+      const info = alert.alertinfo || {};
+      if (info.WHAT)    tlog(`WHAT:  ${info.WHAT}`, 't-alert');
+      if (info.WHEN)    tlog(`WHEN:  ${info.WHEN}`, 't-alert');
+      if (info.IMPACTS) tlog(`IMPS:  ${info.IMPACTS}`, 't-alert');
+      const exp = alert.expires ? new Date(alert.expires).toLocaleString() : '—';
+      tlog(`EXP:   ${exp}`, 't-alert');
+      tlogDivider();
+
+      setBotStatus('zooming');
+      animateThinkBar('ZOOMING', 2000);
+      botZoomToAlert(alert);
+
+      const script = buildBotScript(alert);
+      tlog('BRAIN: Script generated (' + script.length + ' chars)', 't-brain');
+
+      // Small delay then speak
+      setTimeout(() => {
+        animateThinkBar('SPEAKING', script.length * 55);
+        botSpeak(script, () => {
+          tlog('SPEAK: TTS complete.', 't-speak');
+          setBotStatus('idle');
+          animateThinkBar('RETURNING', 2800, () => {
+            botReturnHome();
+            updateBotHUD(null);
+            scheduleBotCycle();
+          });
+        });
+      }, 2200);
+    });
+  });
+}
+
+function scheduleBotCycle() {
+  clearTimeout(BOT.scanTimer);
+  if (!BOT.active) return;
+  const delay = BOT.SCAN_INTERVAL_MIN + Math.random() * (BOT.SCAN_INTERVAL_MAX - BOT.SCAN_INTERVAL_MIN);
+  tlog(`SYS: Next scan in ${(delay/1000).toFixed(0)}s`, 't-sys');
+  animateThinkBar('IDLE', delay);
+  document.getElementById('bot-thinking-label').textContent = 'IDLE';
+  setBotStatus('idle');
+  BOT.scanTimer = setTimeout(botCycle, delay);
+}
+
+// ── Bot start/stop ────────────────────────────────────────────────────────
+function startBot() {
+  BOT.active     = true;
+  BOT.cycleCount = 0;
+  document.getElementById('bot-terminal').classList.remove('hidden');
+  document.getElementById('btn-bot').classList.add('active');
+  document.getElementById('bot-status-dot').className = 'online';
+  tlog('═══════════════════════════════════════', 't-dim');
+  tlog('SYS: NWS RADAR BOT v1.0 — ONLINE', 't-sys');
+  tlog('SYS: TTS ' + (BOT.ttsEnabled ? 'ENABLED' : 'DISABLED'), 't-sys');
+  tlog('SYS: Scan interval ' + (BOT.SCAN_INTERVAL_MIN/1000).toFixed(0) + '–' + (BOT.SCAN_INTERVAL_MAX/1000).toFixed(0) + 's', 't-sys');
+  tlog('SYS: Alert bias probability ' + (BOT.SPEAK_PROBABILITY*100).toFixed(0) + '%', 't-sys');
+  tlog('═══════════════════════════════════════', 't-dim');
+
+  // Kick off first cycle after short boot delay
+  setTimeout(botCycle, 1500);
+}
+
+function stopBot() {
+  BOT.active = false;
+  clearTimeout(BOT.scanTimer);
+  clearTimeout(BOT.dwellTimer);
+  clearInterval(BOT.thinkTimer);
+  if (BOT.currentUtterance) window.speechSynthesis.cancel();
+  clearBotHighlight();
+  botReturnHome();
+  document.getElementById('btn-bot').classList.remove('active');
+  setBotStatus('offline');
+  tlog('SYS: Bot shutting down.', 't-sys');
+  document.getElementById('bot-thinking-label').textContent = 'IDLE';
+  document.getElementById('bot-thinking-fill').style.width = '0%';
+  updateBotHUD(null);
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────
+document.getElementById('btn-bot').addEventListener('click', () => {
+  if (BOT.active) stopBot(); else startBot();
+});
+
+document.getElementById('btn-bot-close').addEventListener('click', () => {
+  stopBot();
+  document.getElementById('bot-terminal').classList.add('hidden');
+});
+
+document.getElementById('btn-tts-toggle').addEventListener('click', function() {
+  BOT.ttsEnabled = !BOT.ttsEnabled;
+  this.classList.toggle('muted', !BOT.ttsEnabled);
+  this.textContent = BOT.ttsEnabled ? '🔊' : '🔇';
+  tlog('SYS: TTS ' + (BOT.ttsEnabled ? 'enabled' : 'muted'), 't-sys');
+  if (!BOT.ttsEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
+});
 
 // =============================================
 //  INIT & POLLING
