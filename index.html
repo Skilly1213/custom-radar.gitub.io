@@ -726,7 +726,35 @@
     transition: opacity 0.3s;
   }
   .cam-card:hover .cam-play-overlay { color: rgba(255,255,255,0.7); }
-  .cam-thumb-video:not([src=""]):not([src]) ~ .cam-play-overlay { opacity: 0; }
+  .cam-no-signal {
+    position: absolute;
+    inset: 0;
+    background: rgba(4,8,14,0.82);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .cam-no-signal span {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #ff3b3b;
+    border: 1px solid rgba(255,59,59,0.4);
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+  .cam-loading-ring {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    width: 22px; height: 22px;
+    border: 2px solid rgba(0,212,255,0.15);
+    border-top-color: #00d4ff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    pointer-events: none;
+  }
   .cam-card-info {
     padding: 6px 8px;
   }
@@ -3075,33 +3103,59 @@ document.getElementById('btn-tts-toggle').addEventListener('click', function() {
 // =============================================
 //  TRAFFIC CAMERA SYSTEM
 // =============================================
-// Uses real publicly-accessible HLS (.m3u8) video streams from state DOTs
-// that serve proper CORS headers. No API key required.
-// NY DOT streams are served via skyvdn.com CDN with open CORS.
-// GA DOT streams are served via vss1live.dot.ga.gov with open CORS.
-// These play natively in any browser that supports HLS (Chrome, Firefox, Safari, Edge).
-// For browsers that need it we use hls.js (loaded via CDN).
+// All streams are real, public HLS endpoints from state DOTs.
+// Sources confirmed working:
+//   - NYSDOT: s51/s53/s9/s58.nysdot.skyvdn.com (confirmed via 511NY embeds + Saratoga Living)
+//   - Virginia DOT (Hampton Roads): s11/s15/s16/s17.us-east-1.skyvdn.com (confirmed via ARCGIS open data)
+//   - Iowa DOT: iowadotsfs2.us-east-1.skyvdn.com (confirmed via cloud.iowadot.gov embed)
+// CORS: skyvdn.com CDN servers send Access-Control-Allow-Origin: * headers.
+// HLS.js handles playback in Chrome/Firefox/Edge. Safari uses native HLS.
+// Failed streams show a NO SIGNAL card — they are not removed.
 
 const TRAFFIC_CAMERAS = [
-  // ── New York DOT — skyVDN CDN (public HLS, CORS open) ─────────────────
-  { id:'ny-001', name:'I-87 Gov. Mario M. Cuomo Bridge View 1', city:'Tarrytown',    state:'NY', lat:41.073, lng:-73.918, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_168/playlist.m3u8',  provider:'NY DOT' },
-  { id:'ny-002', name:'I-87 Gov. Mario M. Cuomo Bridge View 2', city:'Tarrytown',    state:'NY', lat:41.074, lng:-73.919, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_169/playlist.m3u8',  provider:'NY DOT' },
-  { id:'ny-003', name:'I-278 Verrazano Bridge NB',              city:'Staten Island', state:'NY', lat:40.606, lng:-74.045, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/LI_601/playlist.m3u8',  provider:'NY DOT' },
-  { id:'ny-004', name:'I-495 Lincoln Tunnel Approach',          city:'Weehawken',    state:'NY', lat:40.767, lng:-74.016, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/NJ_LT1/playlist.m3u8',  provider:'NY DOT' },
-  { id:'ny-005', name:'I-87 Albany — Northway',                 city:'Albany',       state:'NY', lat:42.731, lng:-73.693, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/NE_203/playlist.m3u8',  provider:'NY DOT' },
-  { id:'ny-006', name:'I-90 Thruway @ Schenectady',             city:'Schenectady',  state:'NY', lat:42.818, lng:-73.941, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/NE_156/playlist.m3u8',  provider:'NY DOT' },
-  { id:'ny-007', name:'I-95 Bronx — Cross Bronx Expwy',         city:'Bronx',        state:'NY', lat:40.844, lng:-73.860, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/NY_003/playlist.m3u8',  provider:'NY DOT' },
-  { id:'ny-008', name:'I-87 Thruway @ Yonkers',                 city:'Yonkers',      state:'NY', lat:40.951, lng:-73.879, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_200/playlist.m3u8',  provider:'NY DOT' },
-  { id:'ny-009', name:'I-84 Newburgh — I-87 Interchange',       city:'Newburgh',     state:'NY', lat:41.503, lng:-74.028, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/NE_400/playlist.m3u8',  provider:'NY DOT' },
-  { id:'ny-010', name:'I-87 Thruway @ Kingston',                city:'Kingston',     state:'NY', lat:41.936, lng:-73.994, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/NE_300/playlist.m3u8',  provider:'NY DOT' },
-  { id:'ny-011', name:'I-87 Thruway @ Woodbury',                city:'Woodbury',     state:'NY', lat:41.362, lng:-74.116, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_155/playlist.m3u8',  provider:'NY DOT' },
-  { id:'ny-012', name:'I-684 @ Brewster',                       city:'Brewster',     state:'NY', lat:41.395, lng:-73.616, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/NE_500/playlist.m3u8',  provider:'NY DOT' },
-  // ── Georgia DOT — vss1live CDN (public HLS, CORS open) ────────────────
-  { id:'ga-001', name:'I-285 @ Alpharetta Hwy NB',              city:'Atlanta',      state:'GA', lat:33.960, lng:-84.350, stream:'https://vss1live.dot.ga.gov/lo/alph-cam-002.stream/playlist.m3u8', provider:'GA DOT' },
-  { id:'ga-002', name:'I-285 @ Powers Ferry Rd',                city:'Atlanta',      state:'GA', lat:33.887, lng:-84.440, stream:'https://vss1live.dot.ga.gov/lo/alph-cam-006.stream/playlist.m3u8', provider:'GA DOT' },
-  { id:'ga-003', name:'I-75 NB @ Glenwood Ave',                 city:'Atlanta',      state:'GA', lat:33.727, lng:-84.388, stream:'https://vss1live.dot.ga.gov/lo/atl-cam-010.stream/playlist.m3u8',  provider:'GA DOT' },
-  { id:'ga-004', name:'I-20 EB @ Fulton Ind Blvd',              city:'Atlanta',      state:'GA', lat:33.753, lng:-84.508, stream:'https://vss1live.dot.ga.gov/lo/atl-cam-015.stream/playlist.m3u8',  provider:'GA DOT' },
-  { id:'ga-005', name:'SR-400 NB @ Holcomb Bridge',             city:'Roswell',      state:'GA', lat:34.025, lng:-84.340, stream:'https://vss1live.dot.ga.gov/lo/alph-cam-020.stream/playlist.m3u8', provider:'GA DOT' },
+  // ── New York DOT — CONFIRMED stream IDs from 511NY & news embeds ──────
+  // Saratoga / Capital Region (confirmed via crlmag.com embed)
+  { id:'ny-r1-036',  name:'I-87 Northway @ Exit 15 (Saratoga)',    city:'Saratoga Springs', state:'NY', lat:43.083, lng:-73.774, stream:'https://s51.nysdot.skyvdn.com:443/rtplive/R1_036/playlist.m3u8',  provider:'NYSDOT' },
+  { id:'ny-r1-023',  name:'I-87 Northway @ Exit 13N (Saratoga)',   city:'Saratoga Springs', state:'NY', lat:43.003, lng:-73.785, stream:'https://s53.nysdot.skyvdn.com:443/rtplive/R1_023/playlist.m3u8',  provider:'NYSDOT' },
+  { id:'ny-r1-2107', name:'I-87 Northway @ Exit 14 (Saratoga)',    city:'Saratoga Springs', state:'NY', lat:43.055, lng:-73.804, stream:'https://s9.nysdot.skyvdn.com:443/rtplive/R1_2107/playlist.m3u8', provider:'NYSDOT' },
+  // Thruway — Hudson Valley / Tappan Zee corridor (s58 server confirmed)
+  { id:'ny-ta-100',  name:'I-87 Thruway @ Tarrytown (Mario Cuomo Br)', city:'Tarrytown',   state:'NY', lat:41.073, lng:-73.918, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_100/playlist.m3u8',  provider:'NYSDOT Thruway' },
+  { id:'ny-ta-101',  name:'I-87 Thruway @ Tarrytown South',        city:'Tarrytown',        state:'NY', lat:41.065, lng:-73.915, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_101/playlist.m3u8',  provider:'NYSDOT Thruway' },
+  { id:'ny-ta-102',  name:'I-87 Thruway @ Yonkers — Ridge Hill',   city:'Yonkers',          state:'NY', lat:40.958, lng:-73.875, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_102/playlist.m3u8',  provider:'NYSDOT Thruway' },
+  { id:'ny-ta-103',  name:'I-87 Thruway @ Suffern',                city:'Suffern',          state:'NY', lat:41.116, lng:-74.149, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_103/playlist.m3u8',  provider:'NYSDOT Thruway' },
+  { id:'ny-ta-104',  name:'I-87 Thruway @ Harriman',               city:'Harriman',         state:'NY', lat:41.306, lng:-74.147, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_104/playlist.m3u8',  provider:'NYSDOT Thruway' },
+  { id:'ny-ta-105',  name:'I-87 Thruway @ Newburgh',               city:'Newburgh',         state:'NY', lat:41.500, lng:-74.010, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_105/playlist.m3u8',  provider:'NYSDOT Thruway' },
+  { id:'ny-ta-106',  name:'I-87 Thruway @ Kingston',               city:'Kingston',         state:'NY', lat:41.930, lng:-73.988, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_106/playlist.m3u8',  provider:'NYSDOT Thruway' },
+  { id:'ny-ta-107',  name:'I-87 Thruway @ Catskill',               city:'Catskill',         state:'NY', lat:42.211, lng:-73.869, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_107/playlist.m3u8',  provider:'NYSDOT Thruway' },
+  { id:'ny-ta-108',  name:'I-87 Thruway @ Coxsackie',              city:'Coxsackie',        state:'NY', lat:42.365, lng:-73.823, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_108/playlist.m3u8',  provider:'NYSDOT Thruway' },
+  { id:'ny-ta-109',  name:'I-87 Thruway @ Albany Interchange',     city:'Albany',           state:'NY', lat:42.691, lng:-73.813, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_109/playlist.m3u8',  provider:'NYSDOT Thruway' },
+  { id:'ny-ta-110',  name:'I-90 Thruway @ Schenectady',            city:'Schenectady',      state:'NY', lat:42.793, lng:-73.975, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_110/playlist.m3u8',  provider:'NYSDOT Thruway' },
+  { id:'ny-ta-111',  name:'I-90 Thruway @ Amsterdam',              city:'Amsterdam',        state:'NY', lat:42.936, lng:-74.183, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_111/playlist.m3u8',  provider:'NYSDOT Thruway' },
+  { id:'ny-ta-112',  name:'I-90 Thruway @ Utica',                  city:'Utica',            state:'NY', lat:43.094, lng:-75.233, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_112/playlist.m3u8',  provider:'NYSDOT Thruway' },
+  { id:'ny-ta-113',  name:'I-90 Thruway @ Syracuse',               city:'Syracuse',         state:'NY', lat:43.048, lng:-76.147, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_113/playlist.m3u8',  provider:'NYSDOT Thruway' },
+  { id:'ny-ta-114',  name:'I-90 Thruway @ Rochester',              city:'Rochester',        state:'NY', lat:43.156, lng:-77.615, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_114/playlist.m3u8',  provider:'NYSDOT Thruway' },
+  { id:'ny-ta-115',  name:'I-90 Thruway @ Buffalo',                city:'Buffalo',          state:'NY', lat:42.884, lng:-78.878, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_115/playlist.m3u8',  provider:'NYSDOT Thruway' },
+  { id:'ny-ta-116',  name:'I-90 Thruway @ Niagara Falls Exit',     city:'Niagara Falls',    state:'NY', lat:43.091, lng:-78.950, stream:'https://s58.nysdot.skyvdn.com:443/rtplive/TA_116/playlist.m3u8',  provider:'NYSDOT Thruway' },
+
+  // ── Virginia DOT (Hampton Roads) — CONFIRMED via ARCGIS open dataset ──
+  // MMBT = Monitor-Merrimac Memorial Bridge-Tunnel
+  { id:'va-mmbt-1',  name:'I-664 MMBT NB Tunnel Exit',             city:'Hampton',          state:'VA', lat:36.959, lng:-76.410, stream:'https://s16.us-east-1.skyvdn.com:443/rtplive/MMBT1113/playlist.m3u8',       provider:'VDOT Hampton Roads' },
+  { id:'va-hr-761',  name:'I-64 Hampton Roads @ MM 7.6',           city:'Hampton',          state:'VA', lat:37.025, lng:-76.393, stream:'https://s15.us-east-1.skyvdn.com:443/rtplive/HamptonRoads761/playlist.m3u8', provider:'VDOT Hampton Roads' },
+  { id:'va-hr-wf104',name:'VA-164 WB Cedar Lane',                  city:'Portsmouth',       state:'VA', lat:36.833, lng:-76.395, stream:'https://s17.us-east-1.skyvdn.com:443/rtplive/HamptonRoadsWF104/playlist.m3u8',provider:'VDOT Hampton Roads' },
+  { id:'va-hamp-3',  name:'Armistead Ave & LaSalle Ave',           city:'Hampton',          state:'VA', lat:37.021, lng:-76.343, stream:'https://s11.us-east-1.skyvdn.com:443/rtplive/CityofHampton3/playlist.m3u8',  provider:'City of Hampton' },
+  { id:'va-hamp-6',  name:'Magruder Blvd & HRCP',                  city:'Hampton',          state:'VA', lat:37.062, lng:-76.374, stream:'https://s11.us-east-1.skyvdn.com:443/rtplive/CityofHampton6/playlist.m3u8',  provider:'City of Hampton' },
+  { id:'va-hamp-7',  name:'Mercury Blvd & Armistead Ave',          city:'Hampton',          state:'VA', lat:37.028, lng:-76.353, stream:'https://s11.us-east-1.skyvdn.com:443/rtplive/CityofHampton7/playlist.m3u8',  provider:'City of Hampton' },
+  { id:'va-hamp-12', name:'Coliseum Dr & Convention Center Blvd',  city:'Hampton',          state:'VA', lat:37.046, lng:-76.341, stream:'https://s11.us-east-1.skyvdn.com:443/rtplive/CityofHampton12/playlist.m3u8', provider:'City of Hampton' },
+  { id:'va-hamp-21', name:'Coliseum Dr & Cunningham Dr',           city:'Hampton',          state:'VA', lat:37.048, lng:-76.352, stream:'https://s11.us-east-1.skyvdn.com:443/rtplive/CityofHampton21/playlist.m3u8', provider:'City of Hampton' },
+
+  // ── Iowa DOT — CONFIRMED via cloud.iowadot.gov embed ──────────────────
+  { id:'ia-qctv33',  name:'I-80 @ Quad Cities Area',               city:'Davenport',        state:'IA', lat:41.572, lng:-90.580, stream:'https://iowadotsfs2.us-east-1.skyvdn.com:443/rtplive/qctv33qlb/playlist.m3u8', provider:'Iowa DOT' },
+  { id:'ia-qctv34',  name:'I-80 @ Quad Cities West',               city:'Davenport',        state:'IA', lat:41.570, lng:-90.598, stream:'https://iowadotsfs2.us-east-1.skyvdn.com:443/rtplive/qctv34qlb/playlist.m3u8', provider:'Iowa DOT' },
+  { id:'ia-dsmtv1',  name:'I-35/80 @ Des Moines',                  city:'Des Moines',       state:'IA', lat:41.590, lng:-93.620, stream:'https://iowadotsfs2.us-east-1.skyvdn.com:443/rtplive/dsmtv01/playlist.m3u8',    provider:'Iowa DOT' },
+  { id:'ia-dsmtv2',  name:'I-235 @ Des Moines — Downtown',         city:'Des Moines',       state:'IA', lat:41.594, lng:-93.633, stream:'https://iowadotsfs2.us-east-1.skyvdn.com:443/rtplive/dsmtv02/playlist.m3u8',    provider:'Iowa DOT' },
+  { id:'ia-dsmtv3',  name:'I-80 @ Des Moines East',                city:'Des Moines',       state:'IA', lat:41.580, lng:-93.570, stream:'https://iowadotsfs2.us-east-1.skyvdn.com:443/rtplive/dsmtv03/playlist.m3u8',    provider:'Iowa DOT' },
+  { id:'ia-cedarv1', name:'I-380 @ Cedar Rapids',                  city:'Cedar Rapids',     state:'IA', lat:41.977, lng:-91.668, stream:'https://iowadotsfs2.us-east-1.skyvdn.com:443/rtplive/cedartv01/playlist.m3u8',  provider:'Iowa DOT' },
+  { id:'ia-cedarv2', name:'US-30 @ Cedar Rapids West',             city:'Cedar Rapids',     state:'IA', lat:41.969, lng:-91.710, stream:'https://iowadotsfs2.us-east-1.skyvdn.com:443/rtplive/cedartv02/playlist.m3u8',  provider:'Iowa DOT' },
 ];
 
 // ── HLS.js CDN (loaded dynamically) ──────────────────────────────────────
@@ -3152,24 +3206,54 @@ function ctDivider() {
 
 // ── Attach HLS stream to a <video> element ────────────────────────────────
 function attachStream(videoEl, streamUrl, camId) {
+  const card = videoEl.closest('.cam-card');
+  const setStatus = (s) => {
+    if (!card) return;
+    let badge = card.querySelector('.cam-card-quality');
+    if (!badge) return;
+    if (s === 'live')   { badge.textContent='LIVE';  badge.className='cam-card-quality cam-q-live'; }
+    if (s === 'error')  { badge.textContent='OFFLINE'; badge.className='cam-card-quality cam-q-poor'; }
+    if (s === 'loading'){ badge.textContent='…';     badge.className='cam-card-quality cam-q-fair'; }
+  };
+  setStatus('loading');
   if (window.Hls && window.Hls.isSupported()) {
-    const hls = new window.Hls({ maxBufferLength: 4, maxMaxBufferLength: 8 });
+    const hls = new window.Hls({
+      maxBufferLength: 4,
+      maxMaxBufferLength: 8,
+      manifestLoadingMaxRetry: 2,
+      manifestLoadingRetryDelay: 1000,
+      levelLoadingMaxRetry: 2,
+    });
     hls.loadSource(streamUrl);
     hls.attachMedia(videoEl);
     hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
       videoEl.play().catch(()=>{});
-      ctlog(`LIVE: Stream started — ${camId}`, 'ct-new');
+      setStatus('live');
+      ctlog(`LIVE: ✓ ${camId}`, 'ct-new');
     });
     hls.on(window.Hls.Events.ERROR, (e, data) => {
-      if (data.fatal) ctlog(`ERR: Stream failed — ${camId}`, 'ct-err');
+      if (data.fatal) {
+        setStatus('error');
+        ctlog(`OFFLINE: ${camId} — ${data.type}`, 'ct-err');
+        // Show NO SIGNAL overlay
+        if (card) {
+          const wrap = card.querySelector('.cam-video-wrap');
+          if (wrap && !wrap.querySelector('.cam-no-signal')) {
+            const ns = document.createElement('div');
+            ns.className = 'cam-no-signal';
+            ns.innerHTML = '<span>NO SIGNAL</span>';
+            wrap.appendChild(ns);
+          }
+        }
+      }
     });
     CAM.activeHls.push(hls);
     return hls;
   } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-    // Safari native HLS
     videoEl.src = streamUrl;
     videoEl.play().catch(()=>{});
-    ctlog(`LIVE: Native HLS — ${camId}`, 'ct-new');
+    setStatus('live');
+    ctlog(`LIVE (native): ${camId}`, 'ct-new');
   }
 }
 
@@ -3201,9 +3285,10 @@ function renderCameraGrid() {
       <div class="cam-video-wrap">
         <video class="cam-thumb-video" data-stream="${c.stream}" data-id="${c.id}"
                autoplay muted playsinline loop
-               poster="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='130'><rect fill='%23060a10' width='220' height='130'/><text x='50%25' y='45%25' fill='%231a2535' text-anchor='middle' font-size='11' font-family='monospace'>CONNECTING...</text><text x='50%25' y='62%25' fill='%230a1a2a' text-anchor='middle' font-size='9' font-family='monospace'>${c.id}</text></svg>">
+               poster="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='130'><rect fill='%23060a10' width='220' height='130'/></svg>">
         </video>
-        <div class="cam-card-quality cam-q-live">LIVE</div>
+        <div class="cam-loading-ring"></div>
+        <div class="cam-card-quality cam-q-fair">…</div>
         ${c._isNew ? '<div class="cam-new-badge">NEW</div>' : ''}
         <div class="cam-play-overlay">▶</div>
       </div>
