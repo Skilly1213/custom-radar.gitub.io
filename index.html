@@ -926,6 +926,60 @@
     50%      { box-shadow: 0 0 20px rgba(139,0,0,0.9); }
   }
 
+
+  /* ── NEXRAD STATION POPUP ── */
+  .station-popup .leaflet-popup-content-wrapper {
+    background: #0a1018; border: 1px solid #00d4ff;
+    border-radius: 4px; color: #c8d8e8;
+    box-shadow: 0 4px 24px rgba(0,212,255,0.25);
+    padding: 0; min-width: 230px;
+  }
+  .station-popup .leaflet-popup-content { margin: 0; padding: 0; }
+  .station-popup .leaflet-popup-tip-container { display: none; }
+  .station-popup .leaflet-popup-close-button { color: #4a6080 !important; top: 6px !important; right: 8px !important; font-size:14px !important; }
+  .stn-pop { padding: 12px 14px 10px; }
+  .stn-pop-id   { font-family:'Share Tech Mono',monospace; font-size:20px; font-weight:700; color:#00d4ff; letter-spacing:3px; }
+  .stn-pop-name { font-size:11px; color:#4a6080; margin-bottom:10px; letter-spacing:0.5px; }
+  .stn-pop-row  { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:6px; }
+  .stn-btn {
+    font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700;
+    letter-spacing:1px; text-transform:uppercase; padding:5px 9px;
+    border-radius:2px; cursor:pointer; border:1px solid #1a2535;
+    background:transparent; color:#c8d8e8; transition:all 0.15s; white-space:nowrap;
+  }
+  .stn-btn:hover       { border-color:#00d4ff; color:#00d4ff; }
+  .stn-btn.on          { background:#00d4ff; color:#000; border-color:#00d4ff; box-shadow:0 0 8px rgba(0,212,255,0.4); }
+  .stn-btn.vel:hover   { border-color:#ffa500; color:#ffa500; }
+  .stn-btn.vel.on      { background:#ffa500; color:#000; border-color:#ffa500; }
+  .stn-btn.cref:hover  { border-color:#00ff88; color:#00ff88; }
+  .stn-btn.cref.on     { background:#00ff88; color:#000; border-color:#00ff88; }
+  .stn-btn.dismiss:hover { border-color:#ff3b3b; color:#ff3b3b; }
+  .stn-pop-status { font-family:'Share Tech Mono',monospace; font-size:9px; color:#2a4a2a; margin-top:4px; letter-spacing:1px; }
+  /* pulsing active station dot */
+  .stn-dot-active {
+    width:14px !important; height:14px !important;
+    background:#00ff88 !important; box-shadow:0 0 12px #00ff88 !important;
+    border-radius:50%; border:2px solid #000 !important;
+    animation: stn-pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes stn-pulse {
+    0%,100%{ box-shadow:0 0 8px #00ff88; }
+    50%    { box-shadow:0 0 22px #00ff88, 0 0 40px rgba(0,255,136,0.3); }
+  }
+  /* Active station HUD on map */
+  #nexrad-hud {
+    position:absolute; top:80px; left:10px; z-index:900;
+    background:rgba(6,10,16,0.92); border:1px solid #00d4ff;
+    color:#00d4ff; font-family:'Share Tech Mono',monospace;
+    font-size:10px; letter-spacing:1px; padding:6px 12px;
+    border-radius:2px; display:none; cursor:pointer;
+    box-shadow:0 0 12px rgba(0,212,255,0.25);
+    transition:background 0.15s;
+  }
+  #nexrad-hud:hover { background:rgba(0,212,255,0.08); }
+  #nexrad-hud .hud-id   { font-size:13px; font-weight:700; color:#00ff88; }
+  #nexrad-hud .hud-prod { font-size:9px; color:#4a6080; margin-top:1px; }
+
   @media (max-width: 700px) {
     #sidebar { width: 100%; position: absolute; top: 0; left: 0; height: 55vh; z-index: 2000; }
     #map-container { position: absolute; top: 55vh; left: 0; right: 0; bottom: 0; }
@@ -970,7 +1024,7 @@
       </div>
       <div class="toggle-row">
         <label for="t-stations">Radar Stations</label>
-        <label class="toggle"><input type="checkbox" id="t-stations"><span class="slider"></span></label>
+        <label class="toggle"><input type="checkbox" id="t-stations" checked><span class="slider"></span></label>
       </div>
       <div class="opacity-row">
         <label>Radar</label>
@@ -1151,6 +1205,10 @@
   <!-- MAP -->
   <div id="map-container">
     <div id="map"></div>
+    <div id="nexrad-hud">
+      <div class="hud-id" id="nexrad-hud-id">KTLX</div>
+      <div class="hud-prod" id="nexrad-hud-prod">BASE REFLECTIVITY — CLICK TO DISMISS</div>
+    </div>
     <div id="ff-map-badge">💧 0 Flash Flood Warnings</div>
     <div id="map-topbar">
       <button class="map-btn active" id="btn-streets">Streets</button>
@@ -1287,7 +1345,7 @@ let state = {
   radarOpacity: 0.8,
   showAlerts: true,
   showCounties: true,
-  showStations: false,
+  showStations: true,
   animPlaying: false,
   animFrame: 0,
   animSpeed: 500,
@@ -1677,19 +1735,160 @@ const RADAR_STATIONS = [
   {id:'KYUX',lat:32.4953,lng:-114.6561,name:'Yuma AZ'}
 ];
 
-const stationIcon = L.divIcon({
-  html: `<div style="width:8px;height:8px;background:#00d4ff;border:1px solid #000;border-radius:50%;box-shadow:0 0 6px #00d4ff"></div>`,
-  className: '',
-  iconSize: [8, 8],
-  iconAnchor: [4, 4]
-});
+// ── NEXRAD Station Layer ─────────────────────────────────────────────────
+// RIDGE2 WMS per-station URL format:
+//   https://opengeo.ncep.noaa.gov/geoserver/{station}/ows
+//   LAYERS={station}_bref_qcd   (base reflectivity)
+//   LAYERS={station}_bvel_raw   (base velocity)
+//   LAYERS={station}_cref_qcd   (composite reflectivity)
+
+const NEXRAD = {
+  activeId:    null,   // currently loaded station ID
+  activeLayer: null,   // the WMS tile layer
+  activeProd:  null,   // 'ref' | 'vel' | 'cref'
+  activeMarker:null,   // the marker element for styling
+  markerEls:   {},     // id → DOM div element inside marker
+};
+
+const PROD_LABELS = {
+  ref:  'BASE REFLECTIVITY',
+  vel:  'BASE VELOCITY',
+  cref: 'COMPOSITE REFLECTIVITY',
+};
+
+function makeStationWmsLayer(stationId, product) {
+  // product: 'ref' | 'vel' | 'cref'
+  const layerSuffix = product === 'vel' ? 'bvel_raw' : product === 'cref' ? 'cref_qcd' : 'bref_qcd';
+  const layerName   = `${stationId.toLowerCase()}_${layerSuffix}`;
+  return L.tileLayer.wms(
+    `https://opengeo.ncep.noaa.gov/geoserver/${stationId.toLowerCase()}/ows`,
+    {
+      layers:      layerName,
+      format:      'image/png',
+      transparent: true,
+      version:     '1.3.0',
+      opacity:     0.85,
+      attribution: `NOAA/NWS NEXRAD ${stationId}`,
+      tileSize:    256,
+      zIndex:      250,   // above the national mosaic (200)
+    }
+  );
+}
+
+function loadNexradStation(stationId, product, markerEl) {
+  // Remove previous station layer
+  if (NEXRAD.activeLayer) {
+    map.removeLayer(NEXRAD.activeLayer);
+    NEXRAD.activeLayer = null;
+  }
+  // Reset previous active marker styling
+  if (NEXRAD.activeMarker && NEXRAD.activeMarker !== markerEl) {
+    NEXRAD.activeMarker.className = NEXRAD.activeMarker.className.replace(' stn-dot-active', '');
+  }
+
+  NEXRAD.activeId     = stationId;
+  NEXRAD.activeProd   = product;
+  NEXRAD.activeMarker = markerEl;
+
+  // Style the clicked marker
+  if (markerEl && !markerEl.className.includes('stn-dot-active')) {
+    markerEl.className += ' stn-dot-active';
+  }
+
+  // Load the per-station NEXRAD WMS
+  const layer = makeStationWmsLayer(stationId, product);
+  layer.addTo(map);
+  NEXRAD.activeLayer = layer;
+
+  // Update HUD
+  const hud = document.getElementById('nexrad-hud');
+  document.getElementById('nexrad-hud-id').textContent   = stationId;
+  document.getElementById('nexrad-hud-prod').textContent = PROD_LABELS[product] + ' — CLICK TO DISMISS';
+  hud.style.display = 'block';
+
+  // Zoom to station with range ring context (NEXRAD range ~230 km)
+  const station = RADAR_STATIONS.find(s => s.id === stationId);
+  if (station) {
+    map.flyTo([station.lat, station.lng], 8, { duration: 1.2 });
+  }
+}
+
+function dismissNexrad() {
+  if (NEXRAD.activeLayer) { map.removeLayer(NEXRAD.activeLayer); NEXRAD.activeLayer = null; }
+  if (NEXRAD.activeMarker) {
+    NEXRAD.activeMarker.className = NEXRAD.activeMarker.className.replace(' stn-dot-active', '');
+    NEXRAD.activeMarker = null;
+  }
+  NEXRAD.activeId   = null;
+  NEXRAD.activeProd = null;
+  document.getElementById('nexrad-hud').style.display = 'none';
+}
+
+document.getElementById('nexrad-hud').addEventListener('click', dismissNexrad);
+
+// ── Station icons + popup builder ────────────────────────────────────────
+function makeStationIcon(stationId) {
+  return L.divIcon({
+    html: `<div id="stn-dot-${stationId}" style="width:8px;height:8px;background:#00d4ff;border:1px solid #000;border-radius:50%;box-shadow:0 0 6px #00d4ff;cursor:pointer;transition:all 0.2s"></div>`,
+    className: '',
+    iconSize:   [8, 8],
+    iconAnchor: [4, 4],
+  });
+}
+
+function buildStationPopup(s) {
+  return `<div class="stn-pop">
+    <div class="stn-pop-id">${s.id}</div>
+    <div class="stn-pop-name">${s.name}</div>
+    <div class="stn-pop-row">
+      <button class="stn-btn" onclick="handleStationBtn('${s.id}','ref',this)">📡 Reflectivity</button>
+      <button class="stn-btn vel" onclick="handleStationBtn('${s.id}','vel',this)">💨 Velocity</button>
+      <button class="stn-btn cref" onclick="handleStationBtn('${s.id}','cref',this)">🌐 Composite</button>
+    </div>
+    <div class="stn-pop-row">
+      <button class="stn-btn dismiss" onclick="dismissNexrad();this.closest('.leaflet-popup').querySelector('.leaflet-popup-close-button').click()">✕ Dismiss Radar</button>
+    </div>
+    <div class="stn-pop-status" id="stn-status-${s.id}">Click a product to load NEXRAD data</div>
+  </div>`;
+}
+
+window.handleStationBtn = function(stationId, product, btnEl) {
+  // Toggle off if already active
+  if (NEXRAD.activeId === stationId && NEXRAD.activeProd === product) {
+    dismissNexrad();
+    btnEl.classList.remove('on');
+    const status = document.getElementById(`stn-status-${stationId}`);
+    if (status) status.textContent = 'Click a product to load NEXRAD data';
+    return;
+  }
+
+  // Clear active state on all buttons in this popup
+  btnEl.closest('.stn-pop').querySelectorAll('.stn-btn').forEach(b => b.classList.remove('on'));
+  btnEl.classList.add('on');
+
+  const dotEl = document.getElementById(`stn-dot-${stationId}`);
+  loadNexradStation(stationId, product, dotEl);
+
+  const status = document.getElementById(`stn-status-${stationId}`);
+  if (status) status.textContent = `Loading ${PROD_LABELS[product]}…`;
+
+  if (NEXRAD.activeLayer) {
+    NEXRAD.activeLayer.on('load',     () => { if (status) status.textContent = `✓ ${PROD_LABELS[product]} — Live`; });
+    NEXRAD.activeLayer.on('tileerror',() => { if (status) status.textContent = `⚠ Load error — station may be offline`; });
+  }
+};
 
 function loadStations() {
   if (state.stationLayer) map.removeLayer(state.stationLayer);
   state.stationLayer = L.layerGroup();
   RADAR_STATIONS.forEach(s => {
-    const m = L.marker([s.lat, s.lng], { icon: stationIcon });
-    m.bindTooltip(`${s.id} — ${s.name}`, { className: 'station-tooltip', direction: 'top' });
+    const m = L.marker([s.lat, s.lng], { icon: makeStationIcon(s.id) });
+    m.bindPopup(buildStationPopup(s), {
+      className:  'station-popup',
+      maxWidth:   280,
+      closeButton: true,
+    });
+    m.bindTooltip(`<b>${s.id}</b> — ${s.name}`, { direction: 'top', offset: [0, -6] });
     state.stationLayer.addLayer(m);
   });
   if (state.showStations) state.stationLayer.addTo(map);
@@ -1700,6 +1899,7 @@ document.getElementById('t-stations').addEventListener('change', function() {
   if (state.stationLayer) {
     state.showStations ? state.stationLayer.addTo(map) : map.removeLayer(state.stationLayer);
   }
+  if (!this.checked) dismissNexrad();
 });
 
 // =============================================
