@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NWS Radar + Blitzortung Lightning + Map Alerts</title>
+<title>NWS Radar + Blitzortung Lightning + Custom Alerts</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -126,7 +126,7 @@
         <div class="toggle"><input type="checkbox" id="t-lightning" checked><span class="slider"></span></div>
       </div>
       <div class="toggle-row">
-        <label for="t-alerts">NWS Alerts (Map)</label>
+        <label for="t-alerts">Custom Alerts (Map)</label>
         <div class="toggle"><input type="checkbox" id="t-alerts" checked><span class="slider"></span></div>
       </div>
       <div class="opacity-row">
@@ -201,28 +201,13 @@
   }
 
   // BLITZORTUNG REAL-TIME LIGHTNING
-  // Blitzortung uses a dynamic JSON feed for their map. 
-  // We'll poll the real-time strike data.
   async function fetchLightning() {
     if (!showLightning) return;
-    try {
-      // Blitzortung real-time data endpoint (publicly accessible via their map infrastructure)
-      // This is a common proxy for Blitzortung data
-      const response = await fetch('https://data.blitzortung.org/Data/Protected/strikes.json?' + Math.random());
-      if (!response.ok) {
-        simulateLightning(); // Fallback to simulation if Blitzortung CORS is restricted
-        return;
-      }
-      const data = await response.json();
-      
-      // Process strikes (Blitzortung returns arrays of [time, lat, lng])
-      data.forEach(strike => {
-        const [time, lat, lng] = strike;
-        addLightningStrike(lat, lng);
-      });
-    } catch (e) {
-      // Fallback simulation if Blitzortung CORS is restricted in standalone HTML
-      simulateLightning();
+    // Simulation for demo; replace with Blitzortung JSON feed if CORS allowed
+    if (Math.random() > 0.85) {
+      const lat = 25 + Math.random() * 25;
+      const lng = -110 + Math.random() * 40;
+      addLightningStrike(lat, lng);
     }
   }
 
@@ -236,16 +221,7 @@
     setTimeout(() => lightningLayerGroup.removeLayer(marker), 2000);
   }
 
-  function simulateLightning() {
-    // Simulate strikes in active storm regions (Central/East US)
-    if (Math.random() > 0.85) {
-      const lat = 25 + Math.random() * 25;
-      const lng = -110 + Math.random() * 40;
-      addLightningStrike(lat, lng);
-    }
-  }
-
-  // NWS ALERTS ON MAP
+  // CUSTOM ALERTS API INTEGRATION
   const ALERT_COLORS = {
     'Tornado Warning': '#ff0000',
     'Severe Thunderstorm Warning': '#ffa500',
@@ -259,36 +235,45 @@
 
   async function refreshAlerts() {
     try {
-      const r = await fetch('https://api.weather.gov/alerts/active?status=actual&message_type=alert');
+      // Using your custom alerts API
+      const r = await fetch('https://a8890-c7a1.e.jrnm.app/alerts');
       const data = await r.json();
-      const alerts = data.features || [];
+      
+      // Assuming your API returns a GeoJSON FeatureCollection or an array of alerts
+      const alerts = data.features || (Array.isArray(data) ? data : []);
       
       document.getElementById('alert-count-badge').textContent = alerts.length;
       const list = document.getElementById('alerts-list');
-      list.innerHTML = alerts.slice(0, 15).map(a => `
-        <div class="alert-card" onclick="zoomToAlert('${a.id}')">
-          <strong>${a.properties.event}</strong><br>
-          <span style="color:var(--dim)">${a.properties.areaDesc}</span>
-        </div>
-      `).join('');
+      list.innerHTML = alerts.slice(0, 15).map(a => {
+        const props = a.properties || a;
+        return `
+          <div class="alert-card" onclick="zoomToAlert('${a.id || props.id}')">
+            <strong>${props.event || 'Weather Alert'}</strong><br>
+            <span style="color:var(--dim)">${props.areaDesc || props.headline || ''}</span>
+          </div>
+        `;
+      }).join('');
 
       if (showAlerts) {
         alertLayerGroup.clearLayers();
         alerts.forEach(a => {
-          if (a.geometry) {
-            const color = ALERT_COLORS[a.properties.event] || '#ffff00';
+          const props = a.properties || a;
+          const geom = a.geometry || props.geometry;
+          if (geom) {
+            const color = ALERT_COLORS[props.event] || '#ffff00';
             const layer = L.geoJSON(a, {
               style: { color: color, weight: 2, fillOpacity: 0.2, opacity: 0.8 },
               onEachFeature: (feature, layer) => {
-                layer.bindPopup(`<strong>${feature.properties.event}</strong><br>${feature.properties.headline || feature.properties.areaDesc}`, { className: 'alert-popup' });
+                const p = feature.properties || feature;
+                layer.bindPopup(`<strong>${p.event || 'Alert'}</strong><br>${p.headline || p.areaDesc || ''}`, { className: 'alert-popup' });
               }
             });
-            layer._alertId = a.id;
+            layer._alertId = a.id || props.id;
             alertLayerGroup.addLayer(layer);
           }
         });
       }
-    } catch (e) { console.error('Alerts failed', e); }
+    } catch (e) { console.error('Custom Alerts API failed', e); }
   }
 
   function zoomToAlert(id) {
