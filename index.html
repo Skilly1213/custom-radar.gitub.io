@@ -603,23 +603,25 @@
       <button class="map-btn" id="btn-earth-view" title="NASA Real-Time Earth View">🌍 Earth View</button>
     </div>
 
-    <!-- WEATHER MODELS PANEL -->
-    <div id="models-panel" style="display:none;position:absolute;top:48px;left:10px;z-index:910;background:rgba(6,10,16,0.96);border:1px solid #1a2535;border-radius:4px;padding:12px 14px 14px;backdrop-filter:blur(6px);width:380px;max-height:calc(100vh - 80px);overflow-y:auto;box-shadow:0 4px 32px rgba(0,0,0,0.7);">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#00d4ff">📊 Weather Models</div>
+    <!-- WEATHER MODELS PANEL — NWS NOMADS OPeNDAP -->
+    <div id="models-panel" style="display:none;position:absolute;top:48px;left:10px;z-index:910;background:rgba(6,10,16,0.96);border:1px solid #1a2535;border-radius:4px;padding:12px 14px 14px;backdrop-filter:blur(6px);width:400px;max-height:calc(100vh - 80px);overflow-y:auto;box-shadow:0 4px 32px rgba(0,0,0,0.7);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#00d4ff">📊 NWS Model Guidance</div>
         <button id="btn-models-close" style="background:transparent;border:1px solid #1a2535;color:#4a6080;cursor:pointer;width:22px;height:22px;border-radius:2px;font-size:11px;display:flex;align-items:center;justify-content:center;">✕</button>
       </div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#4a6080;margin-bottom:10px;line-height:1.5">Click anywhere on the map to load model data for that location. Data from Open-Meteo (GFS, HRRR, NAM, ECMWF). No API key required.</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#4a6080;margin-bottom:10px;line-height:1.5">
+        Live data via NOAA NOMADS OPeNDAP — GFS, HRRR, NAM, RAP, RTMA. Click map to select a location.
+      </div>
 
       <!-- Model selector -->
       <div style="margin-bottom:8px">
-        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin-bottom:5px">Model</div>
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin-bottom:5px">NWS Model (NOMADS)</div>
         <div style="display:flex;gap:4px;flex-wrap:wrap" id="model-btn-row">
-          <button class="mdl-btn active" data-model="gfs">GFS</button>
+          <button class="mdl-btn active" data-model="gfs">GFS 0.25°</button>
           <button class="mdl-btn" data-model="hrrr">HRRR</button>
-          <button class="mdl-btn" data-model="nam">NAM</button>
-          <button class="mdl-btn" data-model="ecmwf_ifs025">ECMWF IFS</button>
-          <button class="mdl-btn" data-model="best_match">Best Match</button>
+          <button class="mdl-btn" data-model="nam">NAM 12km</button>
+          <button class="mdl-btn" data-model="rap">RAP</button>
+          <button class="mdl-btn" data-model="rtma">RTMA</button>
         </div>
       </div>
 
@@ -627,35 +629,49 @@
       <div style="margin-bottom:10px">
         <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin-bottom:5px">Variable</div>
         <div style="display:flex;gap:4px;flex-wrap:wrap" id="var-btn-row">
-          <button class="var-btn active" data-var="temperature_2m" data-label="2m Temp" data-unit="°C">2m Temp</button>
-          <button class="var-btn" data-var="precipitation" data-label="Precip" data-unit="mm">Precip</button>
-          <button class="var-btn" data-var="wind_speed_10m" data-label="Wind 10m" data-unit="kn">Wind</button>
-          <button class="var-btn" data-var="cape" data-label="CAPE" data-unit="J/kg">CAPE</button>
-          <button class="var-btn" data-var="geopotential_height_500hPa" data-label="500hPa Hgt" data-unit="m">500hPa Z</button>
-          <button class="var-btn" data-var="temperature_850hPa" data-label="850hPa Temp" data-unit="°C">850hPa T</button>
-          <button class="var-btn" data-var="wind_speed_250hPa" data-label="250hPa Wind" data-unit="kn">250hPa Wnd</button>
-          <button class="var-btn" data-var="surface_pressure" data-label="MSLP" data-unit="hPa">MSLP</button>
-          <button class="var-btn" data-var="relative_humidity_2m" data-label="RH 2m" data-unit="%">RH</button>
-          <button class="var-btn" data-var="dew_point_2m" data-label="Dewpoint" data-unit="°C">Dewpoint</button>
+          <button class="var-btn active" data-var="tmp2m"  data-label="2m Temp"    data-unit="°C"   data-key="tmp2m">2m Temp</button>
+          <button class="var-btn"        data-var="ugrd10m" data-label="U-Wind 10m" data-unit="m/s"  data-key="ugrd10m">U-Wind</button>
+          <button class="var-btn"        data-var="vgrd10m" data-label="V-Wind 10m" data-unit="m/s"  data-key="vgrd10m">V-Wind</button>
+          <button class="var-btn"        data-var="pressfc"  data-label="Sfc Press"  data-unit="hPa" data-key="pressfc">Sfc P</button>
+          <button class="var-btn"        data-var="pratesfc" data-label="Precip Rate" data-unit="kg/m²/s" data-key="pratesfc">Precip</button>
+          <button class="var-btn"        data-var="rh2m"    data-label="RH 2m"      data-unit="%"    data-key="rh2m">RH</button>
+          <button class="var-btn"        data-var="dpt2m"   data-label="Dewpoint 2m" data-unit="°C"  data-key="dpt2m">Dewpoint</button>
+          <button class="var-btn"        data-var="vissfc"  data-label="Visibility"  data-unit="m"   data-key="vissfc">Visibility</button>
+          <button class="var-btn"        data-var="hlcy"    data-label="Storm Rel Helicity" data-unit="m²/s²" data-key="hlcy">SRH</button>
         </div>
       </div>
 
-      <div id="models-location" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#4a6080;margin-bottom:8px">📍 No location selected — click map</div>
-      <div id="models-status" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#336633;margin-bottom:8px"></div>
-
-      <!-- Chart canvas -->
-      <canvas id="models-chart" width="352" height="220" style="background:#060a10;border:1px solid #1a2535;border-radius:2px;display:block;width:100%;height:220px"></canvas>
-
-      <!-- Multi-model comparison -->
-      <div style="margin-top:10px;border-top:1px solid #1a2535;padding-top:10px">
-        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin-bottom:6px">Model Comparison (current hour)</div>
-        <div id="models-comparison" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#c8d8e8;line-height:1.8"></div>
+      <!-- Forecast hours -->
+      <div style="margin-bottom:10px">
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin-bottom:5px">Forecast Hour Range</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="range" id="mdl-fhr-slider" min="0" max="48" value="0" step="1" style="flex:1;accent-color:#00d4ff">
+          <span id="mdl-fhr-label" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#00d4ff;width:40px">F000</span>
+        </div>
       </div>
 
-      <!-- Severe indices -->
+      <div id="models-location" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#4a6080;margin-bottom:6px">📍 No location selected — click map</div>
+      <div id="models-status"   style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#336633;margin-bottom:8px;min-height:13px"></div>
+
+      <!-- Chart: time series over all forecast hours -->
+      <canvas id="models-chart" width="372" height="200" style="background:#060a10;border:1px solid #1a2535;border-radius:2px;display:block;width:100%;"></canvas>
+
+      <!-- Multi-model comparison at selected hour -->
       <div style="margin-top:10px;border-top:1px solid #1a2535;padding-top:10px">
-        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin-bottom:6px">Severe Wx Indices (current)</div>
-        <div id="models-indices" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-family:'Share Tech Mono',monospace;font-size:10px"></div>
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin-bottom:5px">Model Comparison — 2m Temp at F000</div>
+        <div id="models-comparison" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;"></div>
+      </div>
+
+      <!-- Current conditions grid from RTMA -->
+      <div style="margin-top:10px;border-top:1px solid #1a2535;padding-top:10px">
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin-bottom:5px">RTMA Current Analysis</div>
+        <div id="models-rtma" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;"></div>
+      </div>
+
+      <!-- Source attribution -->
+      <div style="margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:8px;color:#2a3a4a;border-top:1px solid #1a2535;padding-top:6px;line-height:1.6">
+        Data: NOAA/NCEP NOMADS OPeNDAP · nomads.ncep.noaa.gov<br>
+        GFS 0.25° · HRRR · NAM 12km · RAP · RTMA 2.5km
       </div>
     </div>
 
@@ -1999,19 +2015,529 @@ document.getElementById('t-lightning').addEventListener('change',function(){
 ltngConnect(); setInterval(updateLightningBadge,5000);
 
 // =============================================
-//  WEATHER MODELS — Open-Meteo API
+//  WEATHER MODELS — NWS NOMADS OPeNDAP
+//  Source: nomads.ncep.noaa.gov/dods/
+//  Models: GFS 0.25°, HRRR, NAM 12km, RAP, RTMA 2.5km
 // =============================================
+
 const MDL = {
-  active: false,
-  lat: null,
-  lng: null,
-  model: 'gfs',
-  variable: 'temperature_2m',
-  varLabel: '2m Temp',
-  varUnit: '°C',
+  active:      false,
+  lat:         null,
+  lng:         null,
+  model:       'gfs',
+  variable:    'tmp2m',
+  varLabel:    '2m Temp',
+  varUnit:     '°C',
+  forecastHr:  0,
   clickHandler: null,
-  markerLayer: null,
+  markerLayer:  null,
+  // cached data per model/var/location
+  cache: {},
 };
+
+// ── NOMADS OPeNDAP model configs ──────────────────────────────────────────
+// NOMADS GrADS Data Server: returns ASCII text, parseable in browser via CORS
+// URL pattern: https://nomads.ncep.noaa.gov/dods/{dataset}/{dateDir}/{runFile}.ascii?{var}[t][lat][lon]
+
+const NOMADS_BASE = 'https://nomads.ncep.noaa.gov/dods';
+
+// Model definitions: dataset path, temporal resolution, available vars
+const NOMADS_MODELS = {
+  gfs: {
+    label:    'GFS 0.25°',
+    color:    '#00d4ff',
+    path:     'gfs_0p25_1hr',
+    runDir:   'gfs', // gfs{YYYYMMDD}
+    runFile:  'gfs_0p25_1hr_{HH}z',
+    maxFhr:   120,   // hours
+    latRes:   0.25,
+    lonRes:   0.25,
+    vars: {
+      tmp2m:   { name:'tmp2m',   label:'2m Temp',       unit:'K',     conv: v => +(v-273.15).toFixed(2) },
+      ugrd10m: { name:'ugrd10m', label:'U-Wind 10m',    unit:'m/s',   conv: v => +v.toFixed(2) },
+      vgrd10m: { name:'vgrd10m', label:'V-Wind 10m',    unit:'m/s',   conv: v => +v.toFixed(2) },
+      pressfc: { name:'pressfc', label:'Sfc Pressure',  unit:'hPa',   conv: v => +(v/100).toFixed(1) },
+      pratesfc:{ name:'pratesfc',label:'Precip Rate',   unit:'mm/hr', conv: v => +(v*3600).toFixed(3) },
+      rh2m:    { name:'rh2m',    label:'RH 2m',         unit:'%',     conv: v => +v.toFixed(1) },
+      dpt2m:   { name:'dpt2m',   label:'Dewpoint 2m',   unit:'°C',    conv: v => +(v-273.15).toFixed(2) },
+      vissfc:  { name:'vissfc',  label:'Visibility',    unit:'km',    conv: v => +(v/1000).toFixed(2) },
+    }
+  },
+  hrrr: {
+    label:    'HRRR',
+    color:    '#00ff88',
+    path:     'hrrr',
+    runDir:   'hrrr', // hrrr{YYYYMMDD}
+    runFile:  'hrrr_{HH}z_wrfsubhf', // subhourly
+    maxFhr:   48,
+    latRes:   0.03,
+    lonRes:   0.03,
+    vars: {
+      tmp2m:   { name:'tmp2m',   label:'2m Temp',       unit:'K',     conv: v => +(v-273.15).toFixed(2) },
+      ugrd10m: { name:'ugrd10m', label:'U-Wind 10m',    unit:'m/s',   conv: v => +v.toFixed(2) },
+      vgrd10m: { name:'vgrd10m', label:'V-Wind 10m',    unit:'m/s',   conv: v => +v.toFixed(2) },
+      pressfc: { name:'pressfc', label:'Sfc Pressure',  unit:'hPa',   conv: v => +(v/100).toFixed(1) },
+      pratesfc:{ name:'pratesfc',label:'Precip Rate',   unit:'mm/hr', conv: v => +(v*3600).toFixed(3) },
+      rh2m:    { name:'rh2m',    label:'RH 2m',         unit:'%',     conv: v => +v.toFixed(1) },
+      dpt2m:   { name:'dpt2m',   label:'Dewpoint 2m',   unit:'°C',    conv: v => +(v-273.15).toFixed(2) },
+      vissfc:  { name:'vissfc',  label:'Visibility',    unit:'km',    conv: v => +(v/1000).toFixed(2) },
+      hlcy:    { name:'hlcy',    label:'Storm Rel Helicity',unit:'m²/s²',conv:v=>+v.toFixed(1) },
+    }
+  },
+  nam: {
+    label:    'NAM 12km',
+    color:    '#ffd700',
+    path:     'nam',
+    runDir:   'nam', // nam{YYYYMMDD}
+    runFile:  'nam_{HH}z_awphys',
+    maxFhr:   84,
+    latRes:   0.12,
+    lonRes:   0.12,
+    vars: {
+      tmp2m:   { name:'tmp2m',   label:'2m Temp',       unit:'K',     conv: v => +(v-273.15).toFixed(2) },
+      ugrd10m: { name:'ugrd10m', label:'U-Wind 10m',    unit:'m/s',   conv: v => +v.toFixed(2) },
+      vgrd10m: { name:'vgrd10m', label:'V-Wind 10m',    unit:'m/s',   conv: v => +v.toFixed(2) },
+      pressfc: { name:'pressfc', label:'Sfc Pressure',  unit:'hPa',   conv: v => +(v/100).toFixed(1) },
+      pratesfc:{ name:'pratesfc',label:'Precip Rate',   unit:'mm/hr', conv: v => +(v*3600).toFixed(3) },
+      rh2m:    { name:'rh2m',    label:'RH 2m',         unit:'%',     conv: v => +v.toFixed(1) },
+      dpt2m:   { name:'dpt2m',   label:'Dewpoint 2m',   unit:'°C',    conv: v => +(v-273.15).toFixed(2) },
+    }
+  },
+  rap: {
+    label:    'RAP',
+    color:    '#ff8c00',
+    path:     'rap',
+    runDir:   'rap', // rap{YYYYMMDD}
+    runFile:  'rap_{HH}z',
+    maxFhr:   51,
+    latRes:   0.13,
+    lonRes:   0.13,
+    vars: {
+      tmp2m:   { name:'tmp2m',   label:'2m Temp',       unit:'K',     conv: v => +(v-273.15).toFixed(2) },
+      ugrd10m: { name:'ugrd10m', label:'U-Wind 10m',    unit:'m/s',   conv: v => +v.toFixed(2) },
+      vgrd10m: { name:'vgrd10m', label:'V-Wind 10m',    unit:'m/s',   conv: v => +v.toFixed(2) },
+      pressfc: { name:'pressfc', label:'Sfc Pressure',  unit:'hPa',   conv: v => +(v/100).toFixed(1) },
+      pratesfc:{ name:'pratesfc',label:'Precip Rate',   unit:'mm/hr', conv: v => +(v*3600).toFixed(3) },
+      rh2m:    { name:'rh2m',    label:'RH 2m',         unit:'%',     conv: v => +v.toFixed(1) },
+    }
+  },
+  rtma: {
+    label:    'RTMA 2.5km',
+    color:    '#c77dff',
+    path:     'rtma2p5',
+    runDir:   'rtma2p5', // rtma2p5_{YYYYMMDD}
+    runFile:  'rtma2p5_{HH}z_der', // analysis, not forecast
+    maxFhr:   0,
+    latRes:   0.025,
+    lonRes:   0.025,
+    vars: {
+      tmp2m:   { name:'tmp2m',   label:'2m Temp',       unit:'K',     conv: v => +(v-273.15).toFixed(2) },
+      ugrd10m: { name:'ugrd10m', label:'U-Wind 10m',    unit:'m/s',   conv: v => +v.toFixed(2) },
+      vgrd10m: { name:'vgrd10m', label:'V-Wind 10m',    unit:'m/s',   conv: v => +v.toFixed(2) },
+      pressfc: { name:'pressfc', label:'Sfc Pressure',  unit:'hPa',   conv: v => +(v/100).toFixed(1) },
+      rh2m:    { name:'rh2m',    label:'RH 2m',         unit:'%',     conv: v => +v.toFixed(1) },
+      dpt2m:   { name:'dpt2m',   label:'Dewpoint 2m',   unit:'°C',    conv: v => +(v-273.15).toFixed(2) },
+      vissfc:  { name:'vissfc',  label:'Visibility',    unit:'km',    conv: v => +(v/1000).toFixed(2) },
+    }
+  },
+};
+
+// ── Build NOMADS OPeNDAP ASCII URL ───────────────────────────────────────
+// The GrADS Data Server returns ASCII like:
+//   tmp2m, [0][0][0]
+//   tmp2m.tmp2m[1][1][1]
+//   time, [0], value
+//   [t=0][lat_idx][lon_idx], value
+//
+// To get a time series for a point: var[t_start:t_end][lat_idx][lon_idx]
+
+function buildNomadsUrl(model, varName, lat, lng, tStart, tEnd) {
+  const cfg = NOMADS_MODELS[model];
+  if (!cfg) return null;
+
+  const now = new Date();
+  // Find most recent model run (round down to nearest 6-hour cycle, or 1-hr for HRRR/RAP/RTMA)
+  const cycleHrs = (model === 'hrrr' || model === 'rap' || model === 'rtma') ? 1 : 6;
+  const runHour  = Math.floor(now.getUTCHours() / cycleHrs) * cycleHrs;
+  // Go back one cycle to ensure data is available
+  const runDate  = new Date(now);
+  runDate.setUTCHours(runHour - cycleHrs, 0, 0, 0);
+
+  const yyyy = runDate.getUTCFullYear();
+  const mm   = String(runDate.getUTCMonth()+1).padStart(2,'0');
+  const dd   = String(runDate.getUTCDate()).padStart(2,'0');
+  const hh   = String(runDate.getUTCHours()).padStart(2,'0');
+  const dateStr  = `${yyyy}${mm}${dd}`;
+
+  const varCfg = cfg.vars[varName];
+  if (!varCfg) return null;
+  const nomadsVar = varCfg.name;
+
+  // Snap lat/lng to model grid
+  const latIdx  = Math.round((lat + 90)  / cfg.latRes);
+  const lonIdx  = Math.round(((lng + 360) % 360) / cfg.lonRes);
+
+  let runDir, runFile;
+
+  switch(model) {
+    case 'gfs':
+      runDir  = `gfs_0p25_1hr/gfs${dateStr}`;
+      runFile = `gfs_0p25_1hr_${hh}z`;
+      break;
+    case 'hrrr':
+      runDir  = `hrrr/hrrr${dateStr}/conus`;
+      runFile = `hrrr_${hh}z_wrfsubhf`;
+      break;
+    case 'nam':
+      runDir  = `nam/nam${dateStr}`;
+      runFile = `nam_${hh}z_awphys`;
+      break;
+    case 'rap':
+      runDir  = `rap/rap${dateStr}`;
+      runFile = `rap_${hh}z`;
+      break;
+    case 'rtma':
+      runDir  = `rtma2p5/rtma2p5${dateStr}`;
+      runFile = `rtma2p5_${hh}z_der`;
+      break;
+  }
+
+  const t0 = tStart || 0;
+  const t1 = tEnd   || Math.min(cfg.maxFhr, 24);
+
+  return `${NOMADS_BASE}/${runDir}/${runFile}.ascii?${nomadsVar}[${t0}:${t1}][${latIdx}][${lonIdx}]`;
+}
+
+// ── Parse NOMADS ASCII response ──────────────────────────────────────────
+// Format:
+// -----------------------------------------------------
+// tmp2m, [25][1][1]
+// [0][0][0], 295.1
+// [1][0][0], 294.8
+// ...
+// time, [25]
+// 738857.0, 738857.04167, ...
+// lat, [1]
+// 39.25
+// lon, [1]
+// 263.75
+// -----------------------------------------------------
+
+function parseNomadsAscii(text, varName, convFn) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const values = [];
+  const times  = [];
+  let inVar = false, inTime = false;
+
+  for (const line of lines) {
+    // Start of variable data block
+    if (line.startsWith(varName + ',') || line.startsWith(varName + '.')) {
+      inVar = true; inTime = false; continue;
+    }
+    // Start of time block
+    if (line.startsWith('time,') || line.startsWith('time.')) {
+      inVar = false; inTime = true; continue;
+    }
+    // End of a section (other variables)
+    if (line.match(/^[a-zA-Z]/) && !line.startsWith('[')) {
+      if (inVar || inTime) { inVar = false; inTime = false; }
+    }
+
+    if (inVar && line.startsWith('[')) {
+      // Format: [t][lat][lon], value
+      const match = line.match(/\]\[.*?\]\[.*?\],\s*([-\d.eE+]+)/);
+      if (match) {
+        const raw = parseFloat(match[1]);
+        if (!isNaN(raw)) values.push(convFn ? convFn(raw) : raw);
+      }
+    }
+
+    if (inTime) {
+      // Time values in days since 1-1-1 (GrADS format)
+      // or as a comma-separated line after the header
+      const nums = line.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+      if (nums.length) times.push(...nums);
+    }
+  }
+
+  // Convert GrADS times (days since 1-1-1) to JS dates
+  // GrADS base: 1 Jan 1 = JD 1.0; JS epoch = 1 Jan 1970
+  // Offset: days from 1-1-1 to 1970-01-01 = 719164
+  const BASE_DAYS = 719164;
+  const dates = times.map(t => new Date((t - BASE_DAYS) * 86400000));
+
+  return { values, dates };
+}
+
+// ── Fetch and parse a NOMADS point time series ────────────────────────────
+async function fetchNomadsTimeSeries(model, varName, lat, lng, fhrMax) {
+  const cfg = NOMADS_MODELS[model];
+  if (!cfg || !cfg.vars[varName]) throw new Error(`${varName} not available for ${model}`);
+
+  const cacheKey = `${model}|${varName}|${lat.toFixed(2)}|${lng.toFixed(2)}`;
+  if (MDL.cache[cacheKey]) return MDL.cache[cacheKey];
+
+  const tEnd  = Math.min(fhrMax || cfg.maxFhr, cfg.maxFhr);
+  const url   = buildNomadsUrl(model, varName, lat, lng, 0, tEnd);
+  if (!url) throw new Error('Could not build NOMADS URL');
+
+  // NOMADS is CORS-enabled for .ascii requests
+  const resp = await fetch(url, { signal: AbortSignal.timeout(12000) });
+  if (!resp.ok) throw new Error(`NOMADS HTTP ${resp.status} — model may not be available yet`);
+  const text = await resp.text();
+  if (!text || text.length < 10) throw new Error('Empty response from NOMADS');
+
+  const conv = cfg.vars[varName].conv;
+  const result = parseNomadsAscii(text, cfg.vars[varName].name, conv);
+
+  if (!result.values.length) throw new Error('No data parsed — check variable/model availability');
+
+  MDL.cache[cacheKey] = result;
+  return result;
+}
+
+// ── Fetch single-value (analysis hour only) for comparison/RTMA ──────────
+async function fetchNomadsPoint(model, varName, lat, lng) {
+  const cfg = NOMADS_MODELS[model];
+  if (!cfg || !cfg.vars[varName]) return null;
+
+  try {
+    const url = buildNomadsUrl(model, varName, lat, lng, 0, 0);
+    if (!url) return null;
+    const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!resp.ok) return null;
+    const text = await resp.text();
+    const conv = cfg.vars[varName].conv;
+    const { values } = parseNomadsAscii(text, cfg.vars[varName].name, conv);
+    return values[0] ?? null;
+  } catch(e) { return null; }
+}
+
+// ── Main load function ────────────────────────────────────────────────────
+async function loadModelData() {
+  const { lat, lng, model, variable, varLabel, varUnit } = MDL;
+  if (lat === null) return;
+
+  const cfg  = NOMADS_MODELS[model];
+  const varCfg = cfg?.vars[variable];
+  if (!varCfg) {
+    document.getElementById('models-status').textContent = `✖ ${variable} not available for ${model}`;
+    return;
+  }
+
+  document.getElementById('models-status').textContent = `⟳ Fetching ${varLabel} from NWS NOMADS (${cfg.label})…`;
+
+  try {
+    const data = await fetchNomadsTimeSeries(model, variable, lat, lng, Math.min(cfg.maxFhr, 72));
+    document.getElementById('models-status').textContent =
+      `✓ ${cfg.label} · ${varCfg.label} · ${data.values.length} time steps · NOMADS`;
+
+    drawModelChart(data.values, data.dates, varLabel, varUnit, cfg.color);
+
+    // Load comparison and RTMA in background
+    loadModelComparison(lat, lng);
+    loadRtmaAnalysis(lat, lng);
+
+  } catch(e) {
+    document.getElementById('models-status').textContent = `✖ ${e.message}`;
+    // Show partial error on chart
+    const canvas = document.getElementById('models-chart');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle='#4a6080'; ctx.font='10px Share Tech Mono';
+      const msg = e.message.length > 55 ? e.message.substring(0,55)+'…' : e.message;
+      ctx.fillText(`Error: ${msg}`, 8, canvas.height/2);
+      ctx.fillStyle='#2a3a4a'; ctx.font='9px Share Tech Mono';
+      ctx.fillText('NOMADS may be updating — try again in 2–5 min', 8, canvas.height/2+16);
+    }
+  }
+}
+
+// ── Chart renderer ─────────────────────────────────────────────────────────
+function drawModelChart(values, dates, label, unit, lineColor) {
+  const canvas = document.getElementById('models-chart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  if (!values.length) {
+    ctx.fillStyle='#4a6080'; ctx.font='11px Share Tech Mono';
+    ctx.fillText('No data', W/2-25, H/2); return;
+  }
+
+  const PAD = { top:18, right:8, bottom:36, left:48 };
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top  - PAD.bottom;
+
+  const minV = Math.min(...values), maxV = Math.max(...values);
+  const range = maxV - minV || 1;
+  const color = lineColor || '#00d4ff';
+
+  // Grid lines
+  for (let i=0; i<=5; i++) {
+    const y   = PAD.top + (cH/5)*i;
+    const val = maxV - (range/5)*i;
+    ctx.strokeStyle='#1a2535'; ctx.lineWidth=0.5;
+    ctx.beginPath(); ctx.moveTo(PAD.left,y); ctx.lineTo(W-PAD.right,y); ctx.stroke();
+    ctx.fillStyle='#4a6080'; ctx.font='8px Share Tech Mono'; ctx.textAlign='right';
+    ctx.fillText(val.toFixed(1), PAD.left-3, y+3);
+  }
+
+  // X-axis date labels
+  const step = Math.max(1, Math.floor(values.length/6));
+  ctx.fillStyle='#4a6080'; ctx.font='8px Share Tech Mono'; ctx.textAlign='center';
+  for (let i=0; i<values.length; i+=step) {
+    const x = PAD.left + (i/(values.length-1))*cW;
+    const d = dates[i];
+    if (d) {
+      const label = `${d.getUTCMonth()+1}/${d.getUTCDate()} ${String(d.getUTCHours()).padStart(2,'0')}Z`;
+      ctx.fillText(label, x, H-PAD.bottom+10);
+    } else {
+      ctx.fillText(`F${String(i).padStart(3,'0')}`, x, H-PAD.bottom+10);
+    }
+  }
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0,PAD.top,0,PAD.top+cH);
+  grad.addColorStop(0, color+'44'); grad.addColorStop(1, color+'06');
+  ctx.beginPath();
+  values.forEach((v,i)=>{
+    const x=PAD.left+(i/(values.length-1))*cW;
+    const y=PAD.top+cH-((v-minV)/range)*cH;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.lineTo(PAD.left+cW,PAD.top+cH); ctx.lineTo(PAD.left,PAD.top+cH); ctx.closePath();
+  ctx.fillStyle=grad; ctx.fill();
+
+  // Line
+  ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=1.8;
+  values.forEach((v,i)=>{
+    const x=PAD.left+(i/(values.length-1))*cW;
+    const y=PAD.top+cH-((v-minV)/range)*cH;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // Now-line (F000 = index 0)
+  ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(PAD.left,PAD.top); ctx.lineTo(PAD.left,PAD.top+cH); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Title
+  ctx.fillStyle='#c8d8e8'; ctx.font='9px Barlow Condensed'; ctx.textAlign='left';
+  ctx.fillText(`${label} (${unit}) — NOMADS · ${values.length} hrs`, PAD.left, 12);
+}
+
+// ── Multi-model comparison at F000 ────────────────────────────────────────
+async function loadModelComparison(lat, lng) {
+  const el = document.getElementById('models-comparison');
+  el.innerHTML = '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#336633">⟳ Fetching comparison…</div>';
+
+  const modelList = ['gfs','hrrr','nam','rap'];
+  const results   = await Promise.allSettled(
+    modelList.map(m => fetchNomadsPoint(m, 'tmp2m', lat, lng))
+  );
+
+  let html = '';
+  modelList.forEach((m, i) => {
+    const cfg = NOMADS_MODELS[m];
+    const val = results[i].status === 'fulfilled' ? results[i].value : null;
+    const display = val !== null ? `${val}°C` : '—';
+    html += `<div class="mdl-idx-card"><div class="mdl-idx-val" style="color:${cfg.color}">${display}</div><div class="mdl-idx-label">${cfg.label}</div></div>`;
+  });
+  el.innerHTML = html || '<span style="font-family:Share Tech Mono,monospace;font-size:9px;color:#4a6080">No comparison data</span>';
+}
+
+// ── RTMA current analysis ──────────────────────────────────────────────────
+async function loadRtmaAnalysis(lat, lng) {
+  const el = document.getElementById('models-rtma');
+  el.innerHTML = '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#336633">⟳ Fetching RTMA…</div>';
+
+  const rtmaVars = ['tmp2m','rh2m','vissfc'];
+  const labels   = ['Temp °C','RH %','Vis km'];
+
+  const results = await Promise.allSettled(
+    rtmaVars.map(v => fetchNomadsPoint('rtma', v, lat, lng))
+  );
+
+  let html = '';
+  rtmaVars.forEach((v, i) => {
+    const val = results[i].status === 'fulfilled' ? results[i].value : null;
+    const display = val !== null ? String(val) : '—';
+    html += `<div class="mdl-idx-card"><div class="mdl-idx-val" style="color:#c77dff">${display}</div><div class="mdl-idx-label">${labels[i]}</div></div>`;
+  });
+  el.innerHTML = html || '<span style="font-family:Share Tech Mono,monospace;font-size:9px;color:#4a6080">RTMA unavailable</span>';
+}
+
+// ── Map click handler for model location picking ───────────────────────────
+function enableModelPicking() {
+  if (MDL.clickHandler) return;
+  MDL.clickHandler = (e) => {
+    MDL.lat = e.latlng.lat;
+    MDL.lng = e.latlng.lng;
+    MDL.cache = {}; // Clear cache for new location
+    document.getElementById('models-location').textContent =
+      `📍 ${MDL.lat.toFixed(3)}°N, ${Math.abs(MDL.lng).toFixed(3)}°${MDL.lng<0?'W':'E'}`;
+    if (MDL.markerLayer) map.removeLayer(MDL.markerLayer);
+    MDL.markerLayer = L.circleMarker([MDL.lat, MDL.lng], {
+      radius:7, color:'#00d4ff', fillColor:'#00d4ff', fillOpacity:0.7, weight:2
+    }).bindPopup(`<div style="font-family:'Barlow Condensed';font-size:12px;color:#00d4ff">NWS NOMADS<br>${MDL.lat.toFixed(3)}°N, ${Math.abs(MDL.lng).toFixed(3)}°W</div>`,{className:'alert-popup'}).addTo(map);
+    loadModelData();
+  };
+  map.on('click', MDL.clickHandler);
+}
+
+function disableModelPicking() {
+  if (MDL.clickHandler) { map.off('click', MDL.clickHandler); MDL.clickHandler = null; }
+  if (MDL.markerLayer) { map.removeLayer(MDL.markerLayer); MDL.markerLayer = null; }
+}
+
+// ── Button wiring ─────────────────────────────────────────────────────────
+document.getElementById('btn-models').addEventListener('click', () => {
+  const panel = document.getElementById('models-panel');
+  const open  = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : 'block';
+  document.getElementById('btn-models').classList.toggle('active', !open);
+  document.getElementById('soundings-panel').style.display = 'none';
+  document.getElementById('btn-soundings').classList.remove('active');
+  if (!open) enableModelPicking(); else disableModelPicking();
+});
+
+document.getElementById('btn-models-close').addEventListener('click', () => {
+  document.getElementById('models-panel').style.display = 'none';
+  document.getElementById('btn-models').classList.remove('active');
+  disableModelPicking();
+});
+
+document.querySelectorAll('.mdl-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mdl-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    MDL.model  = btn.dataset.model;
+    MDL.cache  = {};
+    if (MDL.lat !== null) loadModelData();
+  });
+});
+
+document.querySelectorAll('.var-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.var-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    MDL.variable  = btn.dataset.var;
+    MDL.varLabel  = btn.dataset.label;
+    MDL.varUnit   = btn.dataset.unit;
+    MDL.cache     = {};
+    if (MDL.lat !== null) loadModelData();
+  });
+});
+
+// Forecast hour slider (updates model chart annotation, no refetch needed)
+document.getElementById('mdl-fhr-slider')?.addEventListener('input', function() {
+  MDL.forecastHr = parseInt(this.value);
+  document.getElementById('mdl-fhr-label').textContent = `F${String(MDL.forecastHr).padStart(3,'0')}`;
+});
 
 // Pressure-level variables need different API endpoint params
 const MDL_PRESSURE_VARS = new Set([
