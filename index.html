@@ -327,9 +327,29 @@
   #btn-earth-view { background: rgba(6,10,16,0.85); }
   #btn-earth-view.active { border-color: #4fc3f7; color: #4fc3f7; background: rgba(79,195,247,0.1); box-shadow: 0 0 10px rgba(79,195,247,0.2); }
 
-  /* Basemap toggle — MapTiler style */
-  #btn-maptiler { background: rgba(6,10,16,0.85); }
-  #btn-maptiler.active { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.1); }
+  /* MapTiler GL labels layer on top */
+  #maplibre-labels-container { position:absolute; inset:0; z-index:300; pointer-events:none; }
+  #maplibre-labels-container canvas { pointer-events:none !important; }
+
+  /* Model / sounding panel buttons */
+  .mdl-btn { font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border:1px solid #1a2535;background:transparent;color:#c8d8e8;cursor:pointer;border-radius:2px;transition:all 0.15s; }
+  .mdl-btn:hover { border-color:#00d4ff;color:#00d4ff; }
+  .mdl-btn.active { background:#00d4ff;color:#000;border-color:#00d4ff; }
+  .var-btn { font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.5px;padding:3px 7px;border:1px solid #1a2535;background:transparent;color:#c8d8e8;cursor:pointer;border-radius:2px;transition:all 0.15s; }
+  .var-btn:hover { border-color:#00ff88;color:#00ff88; }
+  .var-btn.active { background:#00ff88;color:#000;border-color:#00ff88; }
+  .mdl-idx-card { background:#0d1520;border:1px solid #1a2535;border-radius:3px;padding:5px 7px; }
+  .mdl-idx-val { font-size:13px;font-weight:700;color:#00d4ff; }
+  .mdl-idx-label { font-size:8px;color:#4a6080;letter-spacing:1px;text-transform:uppercase; }
+  .snd-idx-card { background:#0d1520;border:1px solid #1a2535;border-radius:3px;padding:5px 7px; }
+  .snd-idx-val { font-size:13px;font-weight:700;color:#00ff88; }
+  .snd-idx-label { font-size:8px;color:#4a6080;letter-spacing:1px;text-transform:uppercase; }
+  #btn-models.active { border-color:#00d4ff;color:#00d4ff;background:rgba(0,212,255,0.1); }
+  #btn-soundings.active { border-color:#00ff88;color:#00ff88;background:rgba(0,255,136,0.1); }
+
+  /* Sounding station map markers */
+  .snd-station-dot { width:8px;height:8px;background:#00ff88;border:1px solid #000;border-radius:50%;cursor:pointer;box-shadow:0 0 6px #00ff88;transition:all 0.2s; }
+  .snd-station-dot:hover { transform:scale(1.6); }
 
   /* MapLibre GL container inside Leaflet */
   #maplibre-gl-container { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
@@ -578,7 +598,103 @@
       <button class="map-btn active" id="btn-maptiler">MapTiler</button>
       <button class="map-btn" id="btn-dark">Dark</button>
       <button class="map-btn" id="btn-satellite">Satellite</button>
+      <button class="map-btn" id="btn-models" title="Weather Models">📊 Models</button>
+      <button class="map-btn" id="btn-soundings" title="Weather Soundings">🎈 Soundings</button>
       <button class="map-btn" id="btn-earth-view" title="NASA Real-Time Earth View">🌍 Earth View</button>
+    </div>
+
+    <!-- WEATHER MODELS PANEL -->
+    <div id="models-panel" style="display:none;position:absolute;top:48px;left:10px;z-index:910;background:rgba(6,10,16,0.96);border:1px solid #1a2535;border-radius:4px;padding:12px 14px 14px;backdrop-filter:blur(6px);width:380px;max-height:calc(100vh - 80px);overflow-y:auto;box-shadow:0 4px 32px rgba(0,0,0,0.7);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#00d4ff">📊 Weather Models</div>
+        <button id="btn-models-close" style="background:transparent;border:1px solid #1a2535;color:#4a6080;cursor:pointer;width:22px;height:22px;border-radius:2px;font-size:11px;display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#4a6080;margin-bottom:10px;line-height:1.5">Click anywhere on the map to load model data for that location. Data from Open-Meteo (GFS, HRRR, NAM, ECMWF). No API key required.</div>
+
+      <!-- Model selector -->
+      <div style="margin-bottom:8px">
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin-bottom:5px">Model</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap" id="model-btn-row">
+          <button class="mdl-btn active" data-model="gfs">GFS</button>
+          <button class="mdl-btn" data-model="hrrr">HRRR</button>
+          <button class="mdl-btn" data-model="nam">NAM</button>
+          <button class="mdl-btn" data-model="ecmwf_ifs025">ECMWF IFS</button>
+          <button class="mdl-btn" data-model="best_match">Best Match</button>
+        </div>
+      </div>
+
+      <!-- Variable selector -->
+      <div style="margin-bottom:10px">
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin-bottom:5px">Variable</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap" id="var-btn-row">
+          <button class="var-btn active" data-var="temperature_2m" data-label="2m Temp" data-unit="°C">2m Temp</button>
+          <button class="var-btn" data-var="precipitation" data-label="Precip" data-unit="mm">Precip</button>
+          <button class="var-btn" data-var="wind_speed_10m" data-label="Wind 10m" data-unit="kn">Wind</button>
+          <button class="var-btn" data-var="cape" data-label="CAPE" data-unit="J/kg">CAPE</button>
+          <button class="var-btn" data-var="geopotential_height_500hPa" data-label="500hPa Hgt" data-unit="m">500hPa Z</button>
+          <button class="var-btn" data-var="temperature_850hPa" data-label="850hPa Temp" data-unit="°C">850hPa T</button>
+          <button class="var-btn" data-var="wind_speed_250hPa" data-label="250hPa Wind" data-unit="kn">250hPa Wnd</button>
+          <button class="var-btn" data-var="surface_pressure" data-label="MSLP" data-unit="hPa">MSLP</button>
+          <button class="var-btn" data-var="relative_humidity_2m" data-label="RH 2m" data-unit="%">RH</button>
+          <button class="var-btn" data-var="dew_point_2m" data-label="Dewpoint" data-unit="°C">Dewpoint</button>
+        </div>
+      </div>
+
+      <div id="models-location" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#4a6080;margin-bottom:8px">📍 No location selected — click map</div>
+      <div id="models-status" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#336633;margin-bottom:8px"></div>
+
+      <!-- Chart canvas -->
+      <canvas id="models-chart" width="352" height="220" style="background:#060a10;border:1px solid #1a2535;border-radius:2px;display:block;width:100%;height:220px"></canvas>
+
+      <!-- Multi-model comparison -->
+      <div style="margin-top:10px;border-top:1px solid #1a2535;padding-top:10px">
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin-bottom:6px">Model Comparison (current hour)</div>
+        <div id="models-comparison" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#c8d8e8;line-height:1.8"></div>
+      </div>
+
+      <!-- Severe indices -->
+      <div style="margin-top:10px;border-top:1px solid #1a2535;padding-top:10px">
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin-bottom:6px">Severe Wx Indices (current)</div>
+        <div id="models-indices" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-family:'Share Tech Mono',monospace;font-size:10px"></div>
+      </div>
+    </div>
+
+    <!-- WEATHER SOUNDINGS PANEL -->
+    <div id="soundings-panel" style="display:none;position:absolute;top:48px;left:10px;z-index:910;background:rgba(6,10,16,0.96);border:1px solid #1a2535;border-radius:4px;padding:12px 14px 14px;backdrop-filter:blur(6px);width:460px;max-height:calc(100vh - 80px);overflow-y:auto;box-shadow:0 4px 32px rgba(0,0,0,0.7);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#00ff88">🎈 Weather Soundings</div>
+        <button id="btn-soundings-close" style="background:transparent;border:1px solid #1a2535;color:#4a6080;cursor:pointer;width:22px;height:22px;border-radius:2px;font-size:11px;display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#4a6080;margin-bottom:10px;line-height:1.5">Rawinsonde (RAOB) upper-air data from IEM. Balloon launches at 00Z &amp; 12Z daily. Click a station to load its sounding and render a Skew-T diagram.</div>
+
+      <!-- Station selector -->
+      <div style="margin-bottom:8px">
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin-bottom:5px">Sounding Station</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <select id="snd-station-select" style="flex:1;background:#0a1018;border:1px solid #1a2535;color:#c8d8e8;font-family:'Share Tech Mono',monospace;font-size:11px;padding:4px 6px;border-radius:2px;cursor:pointer">
+            <option value="">-- Select Station --</option>
+          </select>
+          <select id="snd-time-select" style="background:#0a1018;border:1px solid #1a2535;color:#c8d8e8;font-family:'Share Tech Mono',monospace;font-size:11px;padding:4px 6px;border-radius:2px;cursor:pointer;width:80px">
+            <option value="00">00Z</option>
+            <option value="12" selected>12Z</option>
+          </select>
+          <button id="btn-load-sounding" style="background:transparent;border:1px solid #00ff88;color:#00ff88;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:2px;cursor:pointer;transition:all 0.15s;white-space:nowrap">Load</button>
+        </div>
+      </div>
+
+      <div id="snd-status" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#336633;margin-bottom:8px;min-height:14px"></div>
+
+      <!-- Skew-T canvas -->
+      <canvas id="skewt-canvas" width="432" height="380" style="background:#060a10;border:1px solid #1a2535;border-radius:2px;display:block;width:100%;"></canvas>
+
+      <!-- Sounding indices -->
+      <div id="snd-indices" style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-family:'Share Tech Mono',monospace;font-size:10px"></div>
+
+      <!-- Wind profile -->
+      <div id="snd-wind-prof" style="margin-top:8px;border-top:1px solid #1a2535;padding-top:8px">
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin-bottom:5px">Wind Profile</div>
+        <canvas id="wind-prof-canvas" width="432" height="90" style="background:#060a10;border:1px solid #1a2535;border-radius:2px;display:block;width:100%"></canvas>
+      </div>
     </div>
     <div id="timestamp-overlay">NO DATA</div>
     <div id="map-legend">
@@ -679,6 +795,10 @@ const map = L.map('map', {
 // ── MapTiler GL basemap via maplibre-gl-leaflet ────────────────────────────
 let glLayer = null;
 
+// ── Labels-on-top container (separate MapLibre GL instance for labels only) ──
+let labelsGlMap = null;
+let labelsContainer = null;
+
 function addMapTilerLayer() {
   if (glLayer) return;
   try {
@@ -687,14 +807,92 @@ function addMapTilerLayer() {
       attribution: '© <a href="https://www.maptiler.com/copyright/" target="_blank">MapTiler</a> © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
     });
     glLayer.addTo(map);
+
+    // After GL initialises, add a labels-only overlay at z-index 300
+    // so labels render above radar WMS (z:200) and alert polygons
+    glLayer.once('add', () => {
+      setTimeout(() => {
+        try {
+          addLabelsOverlay();
+        } catch(e) { console.warn('Labels overlay failed:', e); }
+      }, 800);
+    });
   } catch(e) {
     console.warn('MapLibre GL failed, falling back to raster tiles:', e);
-    // Fallback: MapTiler raster XYZ
     L.tileLayer(`https://api.maptiler.com/maps/${MAPTILER_STYLE_ID}/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`, {
-      attribution: '© MapTiler © OpenStreetMap',
-      maxZoom: 19,
+      attribution: '© MapTiler © OpenStreetMap', maxZoom: 19,
     }).addTo(map);
   }
+}
+
+function addLabelsOverlay() {
+  // Remove any existing labels overlay
+  removeLabelsOverlay();
+
+  // Create a container div at z-index 300 (above radar 200, alert polygons ~200, below UI 900)
+  labelsContainer = document.createElement('div');
+  labelsContainer.id = 'maplibre-labels-container';
+  labelsContainer.style.cssText = 'position:absolute;inset:0;z-index:300;pointer-events:none;';
+  document.getElementById('map-container').appendChild(labelsContainer);
+
+  const mapEl = map.getContainer();
+  const rect = mapEl.getBoundingClientRect();
+
+  // Labels-only style: same base style but we'll use it for symbol/label layers
+  // We use MapTiler's labels-only style endpoint
+  const labelsStyleUrl = `https://api.maptiler.com/maps/01999299-e27c-7fef-aa98-62beaba7d2e2/style.json?key=${MAPTILER_KEY}`;
+
+  labelsGlMap = new maplibregl.Map({
+    container: labelsContainer,
+    style: labelsStyleUrl,
+    center: map.getCenter(),
+    zoom: map.getZoom(),
+    bearing: 0,
+    pitch: 0,
+    interactive: false,
+    attributionControl: false,
+    preserveDrawingBuffer: false,
+  });
+
+  labelsGlMap.on('load', () => {
+    // Hide all non-symbol layers (keep only text/icon labels)
+    const style = labelsGlMap.getStyle();
+    if (style && style.layers) {
+      style.layers.forEach(layer => {
+        // Only keep symbol layers (text labels, icons)
+        if (layer.type !== 'symbol') {
+          try { labelsGlMap.setLayoutProperty(layer.id, 'visibility', 'none'); } catch(e) {}
+        }
+      });
+    }
+    syncLabelsMap();
+  });
+
+  // Sync labels map when Leaflet map moves
+  map.on('move', syncLabelsMap);
+  map.on('zoom', syncLabelsMap);
+  map.on('resize', syncLabelsMap);
+}
+
+function syncLabelsMap() {
+  if (!labelsGlMap) return;
+  const center = map.getCenter();
+  const zoom = map.getZoom();
+  labelsGlMap.jumpTo({ center: [center.lng, center.lat], zoom: zoom });
+}
+
+function removeLabelsOverlay() {
+  if (labelsGlMap) {
+    try { labelsGlMap.remove(); } catch(e) {}
+    labelsGlMap = null;
+  }
+  if (labelsContainer) {
+    try { labelsContainer.remove(); } catch(e) {}
+    labelsContainer = null;
+  }
+  map.off('move', syncLabelsMap);
+  map.off('zoom', syncLabelsMap);
+  map.off('resize', syncLabelsMap);
 }
 
 // Fallback raster basemaps
@@ -710,8 +908,9 @@ const rasterLayers = {
 let currentBasemap = 'maptiler';
 
 function switchBasemap(name) {
-  // Remove GL layer
+  // Remove GL layer and labels overlay
   if (glLayer && map.hasLayer(glLayer)) { map.removeLayer(glLayer); }
+  removeLabelsOverlay();
   Object.values(rasterLayers).forEach(l => { if (map.hasLayer(l)) map.removeLayer(l); });
 
   if (name === 'maptiler') {
@@ -719,6 +918,19 @@ function switchBasemap(name) {
     addMapTilerLayer();
   } else if (rasterLayers[name]) {
     rasterLayers[name].addTo(map);
+    // Add CartoDB labels on top for dark/satellite
+    const labelsUrl = name === 'satellite'
+      ? 'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png';
+    // Create a pane at z-index 300 for labels
+    if (!map.getPane('labelsPane')) {
+      const pane = map.createPane('labelsPane');
+      pane.style.zIndex = 300;
+      pane.style.pointerEvents = 'none';
+    }
+    L.tileLayer(labelsUrl, {
+      subdomains: 'abcd', maxZoom: 19, pane: 'labelsPane', attribution: '© CARTO'
+    }).addTo(map);
   }
 
   document.querySelectorAll('.map-btn').forEach(b => b.classList.remove('active'));
@@ -1785,6 +1997,720 @@ document.getElementById('t-lightning').addEventListener('change',function(){
 });
 
 ltngConnect(); setInterval(updateLightningBadge,5000);
+
+// =============================================
+//  WEATHER MODELS — Open-Meteo API
+// =============================================
+const MDL = {
+  active: false,
+  lat: null,
+  lng: null,
+  model: 'gfs',
+  variable: 'temperature_2m',
+  varLabel: '2m Temp',
+  varUnit: '°C',
+  clickHandler: null,
+  markerLayer: null,
+};
+
+// Pressure-level variables need different API endpoint params
+const MDL_PRESSURE_VARS = new Set([
+  'geopotential_height_500hPa','temperature_850hPa','wind_speed_250hPa',
+  'geopotential_height_700hPa','temperature_700hPa'
+]);
+
+// Map Open-Meteo API variable names
+const MDL_VAR_MAP = {
+  'geopotential_height_500hPa': { param:'geopotential_height_500hPa', type:'hourly' },
+  'temperature_850hPa':         { param:'temperature_850hPa',         type:'hourly' },
+  'wind_speed_250hPa':          { param:'wind_speed_250hPa',          type:'hourly' },
+  'temperature_2m':             { param:'temperature_2m',             type:'hourly' },
+  'precipitation':              { param:'precipitation',              type:'hourly' },
+  'wind_speed_10m':             { param:'wind_speed_10m',             type:'hourly' },
+  'cape':                       { param:'cape',                       type:'hourly' },
+  'surface_pressure':           { param:'surface_pressure',           type:'hourly' },
+  'relative_humidity_2m':       { param:'relative_humidity_2m',       type:'hourly' },
+  'dew_point_2m':               { param:'dew_point_2m',               type:'hourly' },
+};
+
+const MDL_WIND_UNIT = { 'wind_speed_10m': true, 'wind_speed_250hPa': true };
+
+function buildModelApiUrl(lat, lng, model, variable) {
+  const vm = MDL_VAR_MAP[variable] || { param: variable, type: 'hourly' };
+  // For pressure-level vars, wind convert kn
+  const windUnit = MDL_WIND_UNIT[variable] ? '&wind_speed_unit=kn' : '';
+  const modelParam = model === 'ecmwf_ifs025' ? 'ecmwf_ifs025' : model;
+  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=${vm.param}&models=${modelParam}&forecast_days=7&timezone=auto${windUnit}`;
+}
+
+function buildComparisonUrl(lat, lng, variable) {
+  const vm = MDL_VAR_MAP[variable] || { param: variable, type: 'hourly' };
+  const models = ['gfs','hrrr','nam_conus','ecmwf_ifs025'].join(',');
+  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=${vm.param}&models=${models}&forecast_days=1&timezone=auto`;
+}
+
+function buildIndicesUrl(lat, lng) {
+  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=cape,lifted_index,convective_inhibition,temperature_2m,dew_point_2m,wind_speed_10m,precipitation_probability,surface_pressure&forecast_days=1&timezone=auto`;
+}
+
+async function loadModelData() {
+  const { lat, lng, model, variable, varLabel, varUnit } = MDL;
+  if (lat === null) return;
+
+  document.getElementById('models-status').textContent = `⟳ Fetching ${varLabel} from ${model.toUpperCase()}…`;
+  document.getElementById('models-comparison').textContent = '';
+  document.getElementById('models-indices').innerHTML = '';
+
+  try {
+    // Main chart data
+    const url = buildModelApiUrl(lat, lng, model, variable);
+    const r = await fetch(url); if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+
+    const vm = MDL_VAR_MAP[variable] || { param: variable };
+    const times = d.hourly?.time || [];
+    const vals  = d.hourly?.[vm.param] || [];
+
+    document.getElementById('models-status').textContent = `✓ ${varLabel} — ${model.toUpperCase()} — ${lat.toFixed(2)}°N ${Math.abs(lng).toFixed(2)}°${lng<0?'W':'E'}`;
+
+    drawModelChart(times, vals, varLabel, varUnit);
+
+    // Comparison (background)
+    loadModelComparison(lat, lng, variable, varLabel, varUnit);
+    loadModelIndices(lat, lng);
+
+  } catch(e) {
+    document.getElementById('models-status').textContent = `✖ Error: ${e.message}`;
+  }
+}
+
+function drawModelChart(times, vals, label, unit) {
+  const canvas = document.getElementById('models-chart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  if (!vals.length) { ctx.fillStyle='#4a6080'; ctx.font='12px Share Tech Mono'; ctx.fillText('No data', W/2-30, H/2); return; }
+
+  const validPairs = times.map((t,i) => ({t, v: vals[i]})).filter(p => p.v !== null && p.v !== undefined);
+  if (!validPairs.length) return;
+
+  const values = validPairs.map(p => p.v);
+  const minV = Math.min(...values), maxV = Math.max(...values);
+  const range = maxV - minV || 1;
+
+  const PAD = { top:20, right:10, bottom:40, left:45 };
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top - PAD.bottom;
+
+  // Background grid
+  ctx.strokeStyle = '#1a2535'; ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 5; i++) {
+    const y = PAD.top + (cH / 5) * i;
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(W - PAD.right, y); ctx.stroke();
+    const val = maxV - (range / 5) * i;
+    ctx.fillStyle = '#4a6080'; ctx.font = '9px Share Tech Mono';
+    ctx.textAlign = 'right'; ctx.fillText(val.toFixed(1), PAD.left - 4, y + 3);
+  }
+
+  // X-axis labels (every 24h)
+  const now = new Date();
+  ctx.fillStyle = '#4a6080'; ctx.font = '9px Share Tech Mono'; ctx.textAlign = 'center';
+  const step = Math.floor(validPairs.length / 7);
+  for (let i = 0; i < validPairs.length; i += step) {
+    const x = PAD.left + (i / (validPairs.length - 1)) * cW;
+    const d = new Date(validPairs[i].t);
+    ctx.fillText(`${d.getMonth()+1}/${d.getDate()}`, x, H - PAD.bottom + 12);
+  }
+
+  // Determine line color based on variable
+  let lineColor = '#00d4ff';
+  if (label.includes('Temp')) lineColor = '#ff6b35';
+  if (label.includes('Precip')) lineColor = '#00c853';
+  if (label.includes('Wind')) lineColor = '#ffd700';
+  if (label.includes('CAPE')) lineColor = '#c77dff';
+  if (label.includes('MSLP') || label.includes('hPa')) lineColor = '#00d4ff';
+  if (label.includes('RH') || label.includes('Dew')) lineColor = '#4da6ff';
+
+  // Draw gradient fill
+  const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
+  grad.addColorStop(0, lineColor + '44');
+  grad.addColorStop(1, lineColor + '08');
+
+  ctx.beginPath();
+  validPairs.forEach((p, i) => {
+    const x = PAD.left + (i / (validPairs.length - 1)) * cW;
+    const y = PAD.top + cH - ((p.v - minV) / range) * cH;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.lineTo(PAD.left + cW, PAD.top + cH);
+  ctx.lineTo(PAD.left, PAD.top + cH);
+  ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+
+  // Draw line
+  ctx.beginPath();
+  ctx.strokeStyle = lineColor; ctx.lineWidth = 1.5;
+  validPairs.forEach((p, i) => {
+    const x = PAD.left + (i / (validPairs.length - 1)) * cW;
+    const y = PAD.top + cH - ((p.v - minV) / range) * cH;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Now marker
+  const nowIdx = validPairs.findIndex(p => new Date(p.t) >= now);
+  if (nowIdx > 0) {
+    const x = PAD.left + (nowIdx / (validPairs.length - 1)) * cW;
+    ctx.strokeStyle = '#ffffff44'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top + cH); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Title
+  ctx.fillStyle = '#c8d8e8'; ctx.font = '10px Barlow Condensed'; ctx.textAlign = 'left';
+  ctx.fillText(`${label} (${unit}) — 7-day forecast`, PAD.left, 13);
+}
+
+async function loadModelComparison(lat, lng, variable, varLabel, varUnit) {
+  const el = document.getElementById('models-comparison');
+  try {
+    const url = buildComparisonUrl(lat, lng, variable);
+    const r = await fetch(url); if (!r.ok) return;
+    const d = await r.json();
+    const vm = MDL_VAR_MAP[variable] || { param: variable };
+    const now = new Date();
+    const nowIdx = (d.hourly?.time || []).findIndex(t => new Date(t) >= now);
+    const idx = Math.max(0, nowIdx);
+
+    const modelNames = { gfs:'GFS', hrrr:'HRRR', nam_conus:'NAM', ecmwf_ifs025:'ECMWF IFS' };
+    let html = '';
+    ['gfs','hrrr','nam_conus','ecmwf_ifs025'].forEach(m => {
+      const key = vm.param + '_' + (m === 'gfs' ? 'gfs' : m === 'hrrr' ? 'hrrr' : m === 'nam_conus' ? 'nam_conus' : 'ecmwf_ifs025');
+      // Open-Meteo returns per-model data with model suffix
+      const modelKey = Object.keys(d.hourly || {}).find(k => k.startsWith(vm.param) && k.includes(m.replace('_conus','')));
+      const vals = modelKey ? d.hourly[modelKey] : d.hourly?.[vm.param];
+      const val = vals?.[idx];
+      if (val !== null && val !== undefined) {
+        const color = m === 'gfs' ? '#00d4ff' : m === 'hrrr' ? '#00ff88' : m === 'nam_conus' ? '#ffd700' : '#ff6b35';
+        html += `<span style="color:${color}">${modelNames[m]}:</span> <span style="color:#c8d8e8">${val.toFixed(1)} ${varUnit}</span>   `;
+      }
+    });
+    el.innerHTML = html || '<span style="color:#4a6080">No comparison data</span>';
+  } catch(e) { el.innerHTML = '<span style="color:#4a6080">Comparison unavailable</span>'; }
+}
+
+async function loadModelIndices(lat, lng) {
+  const el = document.getElementById('models-indices');
+  try {
+    const url = buildIndicesUrl(lat, lng);
+    const r = await fetch(url); if (!r.ok) return;
+    const d = await r.json();
+    const now = new Date();
+    const times = d.hourly?.time || [];
+    const idx = Math.max(0, times.findIndex(t => new Date(t) >= now));
+
+    const get = key => d.hourly?.[key]?.[idx];
+    const cape   = get('cape');
+    const li     = get('lifted_index');
+    const cin    = get('convective_inhibition');
+    const t2m    = get('temperature_2m');
+    const td2m   = get('dew_point_2m');
+    const wspd   = get('wind_speed_10m');
+    const pop    = get('precipitation_probability');
+    const mslp   = get('surface_pressure');
+
+    const capeColor = cape > 2500 ? '#c0392b' : cape > 1500 ? '#ff6b35' : cape > 500 ? '#ffd700' : '#4a6080';
+    const liColor   = li < -6 ? '#c0392b' : li < -3 ? '#ff6b35' : li < 0 ? '#ffd700' : '#4a6080';
+
+    el.innerHTML = [
+      cape !== undefined   ? `<div class="snd-idx-card"><div class="snd-idx-val" style="color:${capeColor}">${Math.round(cape)}</div><div class="snd-idx-label">CAPE J/kg</div></div>` : '',
+      li !== undefined     ? `<div class="snd-idx-card"><div class="snd-idx-val" style="color:${liColor}">${li?.toFixed(1)}</div><div class="snd-idx-label">Lifted Idx</div></div>` : '',
+      cin !== undefined    ? `<div class="snd-idx-card"><div class="snd-idx-val" style="color:#4da6ff">${Math.round(cin)}</div><div class="snd-idx-label">CIN J/kg</div></div>` : '',
+      t2m !== undefined    ? `<div class="snd-idx-card"><div class="snd-idx-val" style="color:#ff6b35">${t2m?.toFixed(1)}°C</div><div class="snd-idx-label">2m Temp</div></div>` : '',
+      td2m !== undefined   ? `<div class="snd-idx-card"><div class="snd-idx-val" style="color:#4da6ff">${td2m?.toFixed(1)}°C</div><div class="snd-idx-label">Dewpoint</div></div>` : '',
+      wspd !== undefined   ? `<div class="snd-idx-card"><div class="snd-idx-val" style="color:#ffd700">${wspd?.toFixed(0)} kn</div><div class="snd-idx-label">Wind 10m</div></div>` : '',
+      pop !== undefined    ? `<div class="snd-idx-card"><div class="snd-idx-val" style="color:#00c853">${pop}%</div><div class="snd-idx-label">Precip Prob</div></div>` : '',
+      mslp !== undefined   ? `<div class="snd-idx-card"><div class="snd-idx-val" style="color:#00d4ff">${mslp?.toFixed(0)}</div><div class="snd-idx-label">Sfc P hPa</div></div>` : '',
+    ].join('');
+  } catch(e) { el.innerHTML = '<span style="color:#4a6080;font-size:10px">Indices unavailable</span>'; }
+}
+
+// Map click handler for model location picking
+function enableModelPicking() {
+  if (MDL.clickHandler) return;
+  MDL.clickHandler = (e) => {
+    MDL.lat = e.latlng.lat;
+    MDL.lng = e.latlng.lng;
+    document.getElementById('models-location').textContent = `📍 ${MDL.lat.toFixed(3)}°N, ${MDL.lng.toFixed(3)}°${MDL.lng<0?'W':'E'}`;
+    // Place marker
+    if (MDL.markerLayer) map.removeLayer(MDL.markerLayer);
+    MDL.markerLayer = L.circleMarker([MDL.lat, MDL.lng], {
+      radius:6, color:'#00d4ff', fillColor:'#00d4ff', fillOpacity:0.8, weight:2
+    }).addTo(map);
+    loadModelData();
+  };
+  map.on('click', MDL.clickHandler);
+}
+
+function disableModelPicking() {
+  if (MDL.clickHandler) { map.off('click', MDL.clickHandler); MDL.clickHandler = null; }
+  if (MDL.markerLayer) { map.removeLayer(MDL.markerLayer); MDL.markerLayer = null; }
+}
+
+// Button wiring — models panel
+document.getElementById('btn-models').addEventListener('click', () => {
+  const panel = document.getElementById('models-panel');
+  const open = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : 'block';
+  document.getElementById('btn-models').classList.toggle('active', !open);
+  // Close soundings if open
+  document.getElementById('soundings-panel').style.display = 'none';
+  document.getElementById('btn-soundings').classList.remove('active');
+  if (!open) enableModelPicking();
+  else { disableModelPicking(); }
+});
+
+document.getElementById('btn-models-close').addEventListener('click', () => {
+  document.getElementById('models-panel').style.display = 'none';
+  document.getElementById('btn-models').classList.remove('active');
+  disableModelPicking();
+});
+
+document.querySelectorAll('.mdl-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mdl-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    MDL.model = btn.dataset.model;
+    if (MDL.lat !== null) loadModelData();
+  });
+});
+
+document.querySelectorAll('.var-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.var-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    MDL.variable  = btn.dataset.var;
+    MDL.varLabel  = btn.dataset.label;
+    MDL.varUnit   = btn.dataset.unit;
+    if (MDL.lat !== null) loadModelData();
+  });
+});
+
+// =============================================
+//  WEATHER SOUNDINGS — IEM RAOB API + Skew-T
+// =============================================
+
+// Major NWS radiosonde stations (ICAO / WMO)
+const SOUNDING_STATIONS = [
+  {id:'KBIS',name:'Bismarck ND',lat:46.77,lng:-100.76},{id:'KABR',name:'Aberdeen SD',lat:45.45,lng:-98.41},
+  {id:'KLBF',name:'North Platte NE',lat:41.13,lng:-100.68},{id:'KTOP',name:'Topeka KS',lat:39.07,lng:-95.62},
+  {id:'KOUN',name:'Norman OK',lat:35.23,lng:-97.46},{id:'KDFW',name:'Dallas TX',lat:32.90,lng:-97.30},
+  {id:'KJAN',name:'Jackson MS',lat:32.32,lng:-90.08},{id:'KBNA',name:'Nashville TN',lat:36.12,lng:-86.69},
+  {id:'KPIT',name:'Pittsburgh PA',lat:40.49,lng:-80.23},{id:'KIAD',name:'Washington DC',lat:38.95,lng:-77.45},
+  {id:'KOKX',name:'Upton NY',lat:40.87,lng:-72.86},{id:'KCHH',name:'Chatham MA',lat:41.67,lng:-69.97},
+  {id:'KGYX',name:'Gray ME',lat:43.89,lng:-70.26},{id:'KILN',name:'Wilmington OH',lat:39.42,lng:-83.82},
+  {id:'KGRB',name:'Green Bay WI',lat:44.50,lng:-88.11},{id:'KDVN',name:'Davenport IA',lat:41.61,lng:-90.58},
+  {id:'KMPX',name:'Minneapolis MN',lat:44.85,lng:-93.56},{id:'KDLH',name:'Duluth MN',lat:46.84,lng:-92.21},
+  {id:'KINX',name:'Tulsa OK',lat:36.18,lng:-95.56},{id:'KFWD',name:'Fort Worth TX',lat:32.83,lng:-97.30},
+  {id:'KBMX',name:'Birmingham AL',lat:33.17,lng:-86.77},{id:'KTLH',name:'Tallahassee FL',lat:30.40,lng:-84.33},
+  {id:'KMFL',name:'Miami FL',lat:25.75,lng:-80.38},{id:'KTBW',name:'Tampa FL',lat:27.71,lng:-82.40},
+  {id:'KJAX',name:'Jacksonville FL',lat:30.48,lng:-81.70},{id:'KFFC',name:'Atlanta GA',lat:33.36,lng:-84.57},
+  {id:'KRAX',name:'Raleigh NC',lat:35.67,lng:-78.49},{id:'KGSP',name:'Greenville SC',lat:34.88,lng:-82.22},
+  {id:'KAKQ',name:'Wakefield VA',lat:36.98,lng:-77.01},{id:'KLWX',name:'Sterling VA',lat:38.98,lng:-77.48},
+  {id:'KBUF',name:'Buffalo NY',lat:42.95,lng:-78.74},{id:'KALB',name:'Albany NY',lat:42.75,lng:-73.80},
+  {id:'KBOX',name:'Taunton MA',lat:41.96,lng:-71.14},{id:'KGYX',name:'Portland ME',lat:43.89,lng:-70.26},
+  {id:'KDTX',name:'Detroit MI',lat:42.70,lng:-83.47},{id:'KIWX',name:'N Indiana',lat:41.41,lng:-85.70},
+  {id:'KCLE',name:'Cleveland OH',lat:41.41,lng:-81.86},{id:'KILN',name:'Wilmington OH',lat:39.42,lng:-83.82},
+  {id:'KIND',name:'Indianapolis IN',lat:39.71,lng:-86.28},{id:'KILX',name:'Lincoln IL',lat:40.15,lng:-89.34},
+  {id:'KLOT',name:'Chicago IL',lat:41.60,lng:-88.08},{id:'KMKX',name:'Milwaukee WI',lat:42.97,lng:-88.55},
+  {id:'KDMX',name:'Des Moines IA',lat:41.73,lng:-93.72},{id:'KOAX',name:'Omaha NE',lat:41.32,lng:-96.37},
+  {id:'KEAX',name:'Kansas City MO',lat:38.81,lng:-94.26},{id:'KLSX',name:'St Louis MO',lat:38.70,lng:-90.68},
+  {id:'KSGF',name:'Springfield MO',lat:37.24,lng:-93.40},{id:'KLZK',name:'Little Rock AR',lat:34.84,lng:-92.26},
+  {id:'KSHV',name:'Shreveport LA',lat:32.45,lng:-93.84},{id:'KLCH',name:'Lake Charles LA',lat:30.13,lng:-93.22},
+  {id:'KLIX',name:'New Orleans LA',lat:30.34,lng:-89.83},{id:'KMOB',name:'Mobile AL',lat:30.68,lng:-88.24},
+  {id:'KHTX',name:'Huntsville AL',lat:34.93,lng:-86.08},{id:'KNQA',name:'Memphis TN',lat:35.34,lng:-89.87},
+  {id:'KOHX',name:'Nashville TN',lat:36.25,lng:-86.56},{id:'KMRX',name:'Knoxville TN',lat:36.17,lng:-83.40},
+  {id:'KRLX',name:'Charleston WV',lat:38.31,lng:-81.72},{id:'KPBZ',name:'Pittsburgh PA',lat:40.53,lng:-80.22},
+  {id:'KAKQ',name:'Norfolk VA',lat:36.98,lng:-77.01},{id:'KFCX',name:'Roanoke VA',lat:37.02,lng:-80.27},
+  {id:'KLTX',name:'Wilmington NC',lat:33.99,lng:-78.43},{id:'KMHX',name:'Morehead City NC',lat:34.78,lng:-76.88},
+  {id:'KCLX',name:'Charleston SC',lat:32.66,lng:-81.04},{id:'KCAE',name:'Columbia SC',lat:33.95,lng:-81.12},
+  {id:'KDVN',name:'Quad Cities',lat:41.61,lng:-90.58},{id:'KARX',name:'La Crosse WI',lat:43.82,lng:-91.19},
+  {id:'KDLH',name:'Duluth MN',lat:46.84,lng:-92.21},{id:'KFSD',name:'Sioux Falls SD',lat:43.59,lng:-96.73},
+  {id:'KUDX',name:'Rapid City SD',lat:44.13,lng:-102.83},{id:'KBLX',name:'Billings MT',lat:45.85,lng:-108.61},
+  {id:'KTFX',name:'Great Falls MT',lat:47.46,lng:-111.39},{id:'KMSX',name:'Missoula MT',lat:47.04,lng:-113.99},
+  {id:'KOTX',name:'Spokane WA',lat:47.68,lng:-117.63},{id:'KATX',name:'Seattle WA',lat:48.19,lng:-122.50},
+  {id:'KMAX',name:'Medford OR',lat:42.08,lng:-122.72},{id:'KRTX',name:'Portland OR',lat:45.72,lng:-122.97},
+  {id:'KPDT',name:'Pendleton OR',lat:45.69,lng:-118.85},{id:'KDAX',name:'Sacramento CA',lat:38.50,lng:-121.68},
+  {id:'KMUX',name:'San Francisco CA',lat:37.16,lng:-121.90},{id:'KSOX',name:'Los Angeles CA',lat:33.82,lng:-117.64},
+  {id:'KNKX',name:'San Diego CA',lat:32.92,lng:-117.04},{id:'KESX',name:'Las Vegas NV',lat:35.70,lng:-114.89},
+  {id:'KRGX',name:'Reno NV',lat:39.75,lng:-119.46},{id:'KFTG',name:'Denver CO',lat:39.79,lng:-104.55},
+  {id:'KPUX',name:'Pueblo CO',lat:38.46,lng:-104.18},{id:'KGJX',name:'Grand Junction CO',lat:39.06,lng:-108.21},
+  {id:'KFSX',name:'Flagstaff AZ',lat:34.57,lng:-111.20},{id:'KIWA',name:'Phoenix AZ',lat:33.29,lng:-111.67},
+  {id:'KEMX',name:'Tucson AZ',lat:31.89,lng:-110.63},{id:'KABX',name:'Albuquerque NM',lat:35.15,lng:-106.82},
+  {id:'KEPZ',name:'El Paso TX',lat:31.87,lng:-106.70},{id:'KAMA',name:'Amarillo TX',lat:35.23,lng:-101.71},
+  {id:'KLBB',name:'Lubbock TX',lat:33.65,lng:-101.81},{id:'KMAF',name:'Midland TX',lat:31.94,lng:-102.19},
+  {id:'KEWX',name:'San Antonio TX',lat:29.70,lng:-98.03},{id:'KHGX',name:'Houston TX',lat:29.47,lng:-95.08},
+  {id:'KCRP',name:'Corpus Christi TX',lat:27.78,lng:-97.51},{id:'KBRO',name:'Brownsville TX',lat:25.92,lng:-97.42},
+  {id:'KICT',name:'Wichita KS',lat:37.65,lng:-97.44},{id:'KDDC',name:'Dodge City KS',lat:37.76,lng:-99.97},
+  {id:'KGLD',name:'Goodland KS',lat:39.37,lng:-101.70},{id:'KTWX',name:'Topeka KS',lat:39.00,lng:-96.23},
+];
+
+const SND = { active: false, data: null, stationMarkers: L.layerGroup() };
+
+// Populate station select
+function populateSoundingStations() {
+  const sel = document.getElementById('snd-station-select');
+  const seen = new Set();
+  SOUNDING_STATIONS.forEach(s => {
+    if (seen.has(s.id)) return; seen.add(s.id);
+    const opt = document.createElement('option');
+    opt.value = s.id; opt.textContent = `${s.id} — ${s.name}`;
+    sel.appendChild(opt);
+  });
+}
+
+function showSoundingStationMarkers() {
+  SND.stationMarkers.clearLayers();
+  const seen = new Set();
+  SOUNDING_STATIONS.forEach(s => {
+    if (seen.has(s.id)) return; seen.add(s.id);
+    const icon = L.divIcon({
+      html: `<div class="snd-station-dot" title="${s.id}" data-stn="${s.id}"></div>`,
+      className: '', iconSize:[8,8], iconAnchor:[4,4]
+    });
+    const m = L.marker([s.lat, s.lng], { icon });
+    m.bindTooltip(`<b>${s.id}</b> — ${s.name}`, { direction:'top', offset:[0,-6] });
+    m.on('click', () => {
+      document.getElementById('snd-station-select').value = s.id;
+      loadSounding();
+    });
+    SND.stationMarkers.addLayer(m);
+  });
+  SND.stationMarkers.addTo(map);
+}
+
+function hideSoundingStationMarkers() {
+  map.removeLayer(SND.stationMarkers);
+}
+
+// IEM RAOB JSON API
+async function fetchSounding(stationId, hour) {
+  const now = new Date();
+  // Use today at the requested hour
+  let ts = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), parseInt(hour), 0, 0));
+  // If the requested time is in the future, go back one day
+  if (ts > now) ts.setUTCDate(ts.getUTCDate() - 1);
+  const tsStr = ts.toISOString().replace('.000Z','Z');
+
+  // IEM JSON API
+  const url = `https://mesonet.agron.iastate.edu/json/raob.py?station=${stationId}&ts=${tsStr}`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const d = await r.json();
+  if (!d.profiles || !d.profiles.length) throw new Error('No sounding data found');
+  return d.profiles[0];
+}
+
+async function loadSounding() {
+  const sel = document.getElementById('snd-station-select');
+  const timeEl = document.getElementById('snd-time-select');
+  const stationId = sel.value; if (!stationId) return;
+  const hour = timeEl.value;
+  const statusEl = document.getElementById('snd-status');
+
+  statusEl.textContent = `⟳ Loading ${stationId} sounding…`;
+  document.getElementById('snd-indices').innerHTML = '';
+
+  try {
+    const profile = await fetchSounding(stationId, hour);
+    SND.data = profile;
+    statusEl.textContent = `✓ ${stationId} — ${profile.station?.elevation}m elev — ${profile.profile?.length || 0} levels`;
+    drawSkewT(profile);
+    drawWindProfile(profile);
+    renderSoundingIndices(profile);
+  } catch(e) {
+    statusEl.textContent = `✖ ${e.message}`;
+    // Clear canvas
+    const ctx = document.getElementById('skewt-canvas').getContext('2d');
+    ctx.clearRect(0,0,432,380);
+    ctx.fillStyle='#4a6080'; ctx.font='12px Share Tech Mono';
+    ctx.fillText(`No data for ${stationId} ${hour}Z — try ${hour==='00'?'12':'00'}Z`, 10, 190);
+  }
+}
+
+function drawSkewT(profile) {
+  const canvas = document.getElementById('skewt-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const levels = (profile.profile || []).filter(l =>
+    l.pres !== null && l.tmpc !== null && l.pres >= 100 && l.pres <= 1050
+  );
+  if (!levels.length) {
+    ctx.fillStyle='#4a6080'; ctx.font='12px Share Tech Mono';
+    ctx.fillText('No usable levels', W/2-60, H/2); return;
+  }
+
+  const PAD = { top:20, right:20, bottom:30, left:50 };
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top - PAD.bottom;
+
+  // Pressure-to-Y (log scale: 1050 -> bottom, 100 -> top)
+  const pMin = 100, pMax = 1050;
+  function py(p) { return PAD.top + cH * Math.log(pMax / p) / Math.log(pMax / pMin); }
+
+  // Temperature-to-X with skew (isotherms tilted 45°)
+  const tMin = -50, tMax = 50;
+  const SKEW_FACTOR = 0.8; // skew amount per log-pressure unit
+  function tx(t, p) {
+    const baseX = PAD.left + cW * (t - tMin) / (tMax - tMin);
+    const skewOffset = (H - py(p)) * SKEW_FACTOR * 0.3;
+    return baseX + skewOffset;
+  }
+
+  // Draw isobars (pressure lines)
+  [1000,925,850,700,500,400,300,250,200,150,100].forEach(p => {
+    const y = py(p);
+    ctx.strokeStyle = '#1a2535'; ctx.lineWidth = 0.6;
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(W - PAD.right, y); ctx.stroke();
+    ctx.fillStyle = '#4a6080'; ctx.font = '9px Share Tech Mono'; ctx.textAlign = 'right';
+    ctx.fillText(p, PAD.left - 3, y + 3);
+  });
+
+  // Draw skewed isotherms
+  for (let t = -50; t <= 50; t += 10) {
+    ctx.strokeStyle = t === 0 ? '#00d4ff33' : '#1a253566';
+    ctx.lineWidth = t === 0 ? 1 : 0.5;
+    ctx.beginPath();
+    ctx.moveTo(tx(t, pMax), py(pMax));
+    ctx.lineTo(tx(t, pMin), py(pMin));
+    ctx.stroke();
+    // Label at bottom
+    const bx = tx(t, pMax);
+    if (bx > PAD.left && bx < W - PAD.right) {
+      ctx.fillStyle = '#4a6080'; ctx.font = '8px Share Tech Mono'; ctx.textAlign = 'center';
+      ctx.fillText(t+'°', bx, H - PAD.bottom + 10);
+    }
+  }
+
+  // Draw dry adiabats
+  ctx.save();
+  for (let theta = 230; theta <= 430; theta += 10) {
+    ctx.strokeStyle = '#2a3a1a';
+    ctx.lineWidth = 0.4;
+    ctx.beginPath();
+    let first = true;
+    for (let p = pMax; p >= pMin; p -= 5) {
+      // Dry adiabat: T = theta * (p/1000)^(Rd/Cp) - 273.15
+      const t = theta * Math.pow(p / 1000, 0.286) - 273.15;
+      const x = tx(t, p); const y = py(p);
+      if (x > PAD.left - 10 && x < W - PAD.right + 10) {
+        first ? ctx.moveTo(x, y) : ctx.lineTo(x, y); first = false;
+      }
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Draw temperature profile (red)
+  ctx.beginPath(); ctx.strokeStyle = '#ff6b35'; ctx.lineWidth = 2.5;
+  let first = true;
+  levels.forEach(l => {
+    const x = tx(l.tmpc, l.pres); const y = py(l.pres);
+    first ? ctx.moveTo(x,y) : ctx.lineTo(x,y); first = false;
+  });
+  ctx.stroke();
+
+  // Draw dewpoint profile (green)
+  const levelsWithDp = levels.filter(l => l.dwpc !== null);
+  if (levelsWithDp.length > 1) {
+    ctx.beginPath(); ctx.strokeStyle = '#00c853'; ctx.lineWidth = 2;
+    first = true;
+    levelsWithDp.forEach(l => {
+      const x = tx(l.dwpc, l.pres); const y = py(l.pres);
+      first ? ctx.moveTo(x,y) : ctx.lineTo(x,y); first = false;
+    });
+    ctx.stroke();
+  }
+
+  // LCL marker (lifted condensation level) — approx calculation
+  const sfc = levels[0];
+  if (sfc) {
+    const td = sfc.dwpc !== null ? sfc.dwpc : sfc.tmpc - 20;
+    const lclP = sfc.pres * Math.pow((td + 273.15) / (sfc.tmpc + 273.15), 3.5);
+    if (lclP > pMin && lclP < pMax) {
+      const y = py(lclP);
+      ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(W - PAD.right, y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#ffd700'; ctx.font = '8px Share Tech Mono'; ctx.textAlign = 'left';
+      ctx.fillText(`LCL ~${Math.round(lclP)}hPa`, PAD.left + 3, y - 2);
+    }
+  }
+
+  // Legend
+  ctx.fillStyle = '#ff6b35'; ctx.font = '10px Share Tech Mono'; ctx.textAlign = 'left';
+  ctx.fillText('■ Temp', W - 80, 14);
+  ctx.fillStyle = '#00c853';
+  ctx.fillText('■ Dewpt', W - 80, 26);
+
+  // Title
+  ctx.fillStyle = '#c8d8e8'; ctx.font = '10px Barlow Condensed'; ctx.textAlign = 'left';
+  const stn = profile.station || {};
+  ctx.fillText(`Skew-T: ${stn.id || ''} ${stn.name || ''} — ${profile.valid_at || ''}`, PAD.left, 13);
+}
+
+function drawWindProfile(profile) {
+  const canvas = document.getElementById('wind-prof-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const levels = (profile.profile || []).filter(l =>
+    l.pres !== null && l.sknt !== null && l.pres >= 100 && l.pres <= 1050
+  );
+  if (!levels.length) return;
+
+  const pMin = 100, pMax = 1050;
+  const PAD = { left:50, right:10, top:10, bottom:20 };
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top - PAD.bottom;
+  function py(p) { return PAD.top + cH * Math.log(pMax/p)/Math.log(pMax/pMin); }
+
+  // Pressure axis
+  [1000,850,700,500,300].forEach(p => {
+    const y = py(p);
+    ctx.strokeStyle='#1a2535'; ctx.lineWidth=0.5;
+    ctx.beginPath(); ctx.moveTo(PAD.left,y); ctx.lineTo(W-PAD.right,y); ctx.stroke();
+    ctx.fillStyle='#4a6080'; ctx.font='8px Share Tech Mono'; ctx.textAlign='right';
+    ctx.fillText(p, PAD.left-3, y+3);
+  });
+
+  // Wind barbs / speed bars
+  const maxSpeed = Math.max(...levels.map(l=>l.sknt||0), 1);
+  levels.forEach(l => {
+    const y = py(l.pres);
+    const barW = (l.sknt/maxSpeed)*cW*0.6;
+    const color = l.sknt > 60 ? '#ff0000' : l.sknt > 40 ? '#ffa500' : l.sknt > 20 ? '#ffd700' : '#00c853';
+    ctx.fillStyle = color;
+    ctx.fillRect(PAD.left, y-2, barW, 4);
+
+    // Wind direction tick
+    if (l.drct !== null) {
+      const rad = (l.drct - 90) * Math.PI / 180;
+      const len = 10;
+      const bx = PAD.left + barW + 4;
+      ctx.strokeStyle = '#4a6080'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(bx, y);
+      ctx.lineTo(bx + Math.cos(rad)*len, y + Math.sin(rad)*len);
+      ctx.stroke();
+    }
+
+    // Speed label
+    if (l.sknt > 0) {
+      ctx.fillStyle='#4a6080'; ctx.font='7px Share Tech Mono'; ctx.textAlign='left';
+      ctx.fillText(Math.round(l.sknt)+'kn', PAD.left+barW+16, y+3);
+    }
+  });
+
+  ctx.fillStyle='#c8d8e8'; ctx.font='9px Share Tech Mono'; ctx.textAlign='left';
+  ctx.fillText('Wind Speed & Direction (hPa levels)', PAD.left, 9);
+}
+
+function renderSoundingIndices(profile) {
+  const el = document.getElementById('snd-indices');
+  const stn = profile.station || {};
+  const levels = profile.profile || [];
+
+  // Extract key levels
+  const sfc  = levels.find(l => l.pres >= 900 && l.tmpc !== null);
+  const l850 = levels.find(l => Math.abs(l.pres-850) < 30 && l.tmpc !== null);
+  const l700 = levels.find(l => Math.abs(l.pres-700) < 25 && l.tmpc !== null);
+  const l500 = levels.find(l => Math.abs(l.pres-500) < 25 && l.tmpc !== null);
+
+  // K-index: T850 - T500 + Td850 - (T700 - Td700)
+  let kIdx = null;
+  if (l850 && l500 && l700 && l850.dwpc !== null && l700.dwpc !== null) {
+    kIdx = (l850.tmpc - l500.tmpc) + l850.dwpc - (l700.tmpc - (l700.dwpc||0));
+  }
+
+  // Totals-Totals: VT + CT = (T850-T500) + (Td850-T500)
+  let tt = null;
+  if (l850 && l500 && l850.dwpc !== null) {
+    tt = (l850.tmpc - l500.tmpc) + (l850.dwpc - l500.tmpc);
+  }
+
+  // Showalter: approx T500 - lifted parcel T500
+  let sweat = null; // complex, skip
+
+  // PWAT approx (cm) — integrate mixing ratio
+  let pwat = null;
+  const pwLevels = levels.filter(l=>l.pres && l.dwpc !== null && l.pres<=1050&&l.pres>=200);
+  if (pwLevels.length > 1) {
+    let sum=0;
+    for (let i=0;i<pwLevels.length-1;i++){
+      const dP = Math.abs(pwLevels[i].pres - pwLevels[i+1].pres);
+      const tdAvg = (pwLevels[i].dwpc + pwLevels[i+1].dwpc)/2;
+      const es = 6.112*Math.exp(17.67*tdAvg/(tdAvg+243.5));
+      const w = 0.622*es/(pwLevels[i].pres - es);
+      sum += w*dP*1000/9.81/100; // cm
+    }
+    pwat = sum;
+  }
+
+  const sfcT   = sfc?.tmpc;
+  const sfcDp  = sfc?.dwpc;
+  const sfcWnd = sfc?.sknt;
+  const t500   = l500?.tmpc;
+  const t850   = l850?.tmpc;
+
+  const kColor = kIdx === null ? '#4a6080' : kIdx > 40 ? '#c0392b' : kIdx > 30 ? '#ff6b35' : kIdx > 20 ? '#ffd700' : '#4a6080';
+  const ttColor= tt === null ? '#4a6080' : tt > 55 ? '#c0392b' : tt > 50 ? '#ff6b35' : tt > 44 ? '#ffd700' : '#4a6080';
+
+  el.innerHTML = [
+    sfcT!==undefined && sfcT!==null ? `<div class="snd-idx-card"><div class="snd-idx-val" style="color:#ff6b35">${sfcT.toFixed(1)}°C</div><div class="snd-idx-label">Sfc Temp</div></div>` : '',
+    sfcDp!==undefined && sfcDp!==null ? `<div class="snd-idx-card"><div class="snd-idx-val" style="color:#00c853">${sfcDp.toFixed(1)}°C</div><div class="snd-idx-label">Sfc Dewpt</div></div>` : '',
+    sfcWnd!==undefined && sfcWnd!==null ? `<div class="snd-idx-card"><div class="snd-idx-val" style="color:#ffd700">${Math.round(sfcWnd)} kn</div><div class="snd-idx-label">Sfc Wind</div></div>` : '',
+    t850!==undefined && t850!==null ? `<div class="snd-idx-card"><div class="snd-idx-val" style="color:#ff8c00">${t850.toFixed(1)}°C</div><div class="snd-idx-label">850hPa T</div></div>` : '',
+    t500!==undefined && t500!==null ? `<div class="snd-idx-card"><div class="snd-idx-val" style="color:#4da6ff">${t500.toFixed(1)}°C</div><div class="snd-idx-label">500hPa T</div></div>` : '',
+    kIdx !== null ? `<div class="snd-idx-card"><div class="snd-idx-val" style="color:${kColor}">${kIdx.toFixed(0)}</div><div class="snd-idx-label">K-Index</div></div>` : '',
+    tt !== null ? `<div class="snd-idx-card"><div class="snd-idx-val" style="color:${ttColor}">${tt.toFixed(0)}</div><div class="snd-idx-label">Tot-Totals</div></div>` : '',
+    pwat !== null ? `<div class="snd-idx-card"><div class="snd-idx-val" style="color:#00d4ff">${pwat.toFixed(1)} cm</div><div class="snd-idx-label">PWAT</div></div>` : '',
+  ].join('');
+}
+
+// Button wiring — soundings panel
+document.getElementById('btn-soundings').addEventListener('click', () => {
+  const panel = document.getElementById('soundings-panel');
+  const open = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : 'block';
+  document.getElementById('btn-soundings').classList.toggle('active', !open);
+  // Close models if open
+  document.getElementById('models-panel').style.display = 'none';
+  document.getElementById('btn-models').classList.remove('active');
+  disableModelPicking();
+  if (!open) { showSoundingStationMarkers(); }
+  else { hideSoundingStationMarkers(); }
+});
+
+document.getElementById('btn-soundings-close').addEventListener('click', () => {
+  document.getElementById('soundings-panel').style.display = 'none';
+  document.getElementById('btn-soundings').classList.remove('active');
+  hideSoundingStationMarkers();
+});
+
+document.getElementById('btn-load-sounding').addEventListener('click', loadSounding);
+document.getElementById('snd-station-select').addEventListener('change', () => {
+  const val = document.getElementById('snd-station-select').value;
+  if (val) loadSounding();
+});
+
+// Populate stations on load
+populateSoundingStations();
 
 // =============================================
 //  INIT & POLLING
